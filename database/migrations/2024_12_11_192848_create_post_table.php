@@ -5,7 +5,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreatePostsTable extends Migration
+return new class extends Migration
 {
     public function up()
     {
@@ -13,7 +13,7 @@ class CreatePostsTable extends Migration
             $table->id();
             $table->text('content');
             $table->unsignedBigInteger('user_id');
-            $table->unsignedBigInteger('car_id'); // Foreign key to cars table
+            $table->unsignedBigInteger('car_id')->nullable(); ; // Foreign key to cars table
             $table->json('images')->nullable();
             $table->text('other')->nullable();
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
@@ -26,5 +26,5 @@ class CreatePostsTable extends Migration
     {
         Schema::dropIfExists('posts');
     }
-}
+};
 
