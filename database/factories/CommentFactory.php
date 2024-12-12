@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Models\Posts;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -17,7 +19,9 @@ class CommentFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'content' => $this->faker->paragraph, // Nasumičan sadržaj komentara
+            'user_id' => User::inRandomOrder()->first()->id, // Nasumičan korisnik
+            'post_id' => Posts::inRandomOrder()->first()->id, // Nasumičan post
         ];
     }
 }
