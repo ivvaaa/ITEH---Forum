@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Comment;
+use App\Http\Resources\CommentResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
@@ -14,8 +15,8 @@ class CommentController extends Controller
      */
     public function index()
     {
-        $comments = Comment::with(['user', 'post'])->get();
-        return response()->json($comments);
+        $comments = Comment::all();
+        return CommentResource::collection($comments);
     }
 
     /**
@@ -25,7 +26,7 @@ class CommentController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'content' => 'required|string',
-            'post_id' => 'required|exists:posts,id',
+            'posts_id' => 'required|exists:posts,id',
         ]);
 
         if ($validator->fails()) {
@@ -34,11 +35,11 @@ class CommentController extends Controller
 
         $comment = Comment::create([
             'content' => $request->content,
-            'user_id' => Auth::id(),
-            'post_id' => $request->post_id,
+            'user_id' => Auth::id(), // Koristi ID ulogovanog korisnika
+            'posts_id' => $request->posts_id,
         ]);
 
-        return response()->json($comment);
+        return new CommentResource($comment);
     }
 
     /**
@@ -46,8 +47,8 @@ class CommentController extends Controller
      */
     public function show($id)
     {
-        $comment = Comment::with(['user', 'post'])->findOrFail($id);
-        return response()->json($comment);
+        $comment = Comment::findOrFail($id);
+        return new CommentResource($comment);
     }
 
     /**
@@ -56,8 +57,8 @@ class CommentController extends Controller
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'content' => 'sometimes|required|string',
-            'post_id' => 'sometimes|required|exists:posts,id',
+            'content' => 'required|string',
+            'posts_id' => 'required|exists:posts,id',
         ]);
 
         if ($validator->fails()) {
@@ -67,11 +68,11 @@ class CommentController extends Controller
         $comment = Comment::findOrFail($id);
 
         $comment->update([
-            'content' => $request->content ?? $comment->content,
-            'post_id' => $request->post_id ?? $comment->post_id,
+            'content' => $request->content,
+            'posts_id' => $request->posts_id,
         ]);
 
-        return response()->json($comment);
+        return new CommentResource($comment);
     }
 
     /**

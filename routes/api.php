@@ -17,6 +17,9 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::apiResource('cars', CarController::class);
 
 Route::apiResource('posts', PostsController::class);
+Route::apiResource('comments', CommentController::class);  //automatski kreira CRUD 
+
+
  //Route::apiResource('cars', CarController::class);
 
 
