@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Car;
+use App\Http\Resources\CarResource;
 use Illuminate\Http\Request;
 
 class CarController extends Controller
@@ -51,10 +52,10 @@ class CarController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Car $car)
+    public function show($id)
     {
         $car = Car::findOrFail($id);
-        return response()->json($car);
+        return new CarResource($car);
     }
 
     /**

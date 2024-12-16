@@ -6,7 +6,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CommentController;
 //use App\Http\Controllers\LikeController;
-use App\Http\Controllers\PostController;
+use App\Http\Controllers\PostsController;
 use App\Http\Controllers\CarController;
 
 
@@ -15,6 +15,10 @@ Route::post('/login', [AuthController::class, 'login']);
 
 //Route::apiResource('users', UserController::class);
 Route::apiResource('cars', CarController::class);
+
+Route::apiResource('posts', PostsController::class);
+ //Route::apiResource('cars', CarController::class);
+
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
@@ -39,10 +43,9 @@ Route::fallback(function () {
 
 //         //CommentController
 //     Route::apiResource('comments', CommentController::class);  //automatski kreira CRUD 
-//     Route::apiResource('likes', LikeController::class);
 
 //         //PostController
-//     Route::apiResource('posts', PostController::class);
-//     Route::apiResource('topics', TopicController::class);
+//     Route::apiResource('posts', PostsController::class);
+//     //Route::apiResource('cars', CarController::class);
 
 // });
