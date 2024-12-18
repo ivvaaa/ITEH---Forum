@@ -16,7 +16,6 @@ return new class extends Migration
             $table->string('profile_photo')->nullable()->after('interests'); // Putanja do profilne slike
             $table->text('bio')->nullable()->after('profile_photo'); // Kratka biografija korisnika
             $table->unsignedInteger('posts_count')->default(0)->after('bio'); // Broj postova, default je 0
-            $table->date('birth')->nullable()->after('posts_count'); // Datum rođenja
         });
     }
 

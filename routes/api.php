@@ -20,14 +20,14 @@ Route::apiResource('posts', PostsController::class);
 Route::apiResource('comments', CommentController::class);  //automatski kreira CRUD 
 
 Route::middleware(['role:admin'])->group(function () {
-    Route::resource('posts', PostController::class);
+    Route::resource('posts', PostsController::class);
 });
 Route::middleware(['role:korisnik'])->group(function () {
-    Route::get('posts', [PostController::class, 'index'])->name('posts.index');
-    Route::get('posts/{id}', [PostController::class, 'show'])->name('posts.show');
+    Route::get('posts', [PostsController::class, 'index'])->name('posts.index');
+    Route::get('posts/{id}', [PostsController::class, 'show'])->name('posts.show');
 });
 Route::middleware(['role:not guest'])->group(function () {
-    Route::get('posts/public', [PostController::class, 'publicPosts']);
+    Route::get('posts/public', [PostsController::class, 'publicPosts']);
 });
 
  //Route::apiResource('cars', CarController::class);

@@ -20,7 +20,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'profile_photo',
         'bio',
         'posts_count',
-        'birthdate',
     ];
 
     protected $hidden = [
@@ -29,9 +28,7 @@ class User extends Authenticatable implements MustVerifyEmail
     ];
 
     protected $casts = [
-        'email_verified_at' => 'datetime',
         'interests' => 'array',
-        'birthdate' => 'date',
     ];
 
     public function role()
