@@ -1,3 +1,4 @@
+
 <?php
 
 use Illuminate\Http\Request;
@@ -5,60 +6,45 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CommentController;
-//use App\Http\Controllers\LikeController;
 use App\Http\Controllers\PostsController;
 use App\Http\Controllers\CarController;
 
-
+// Registracija i login
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-
-//Route::apiResource('users', UserController::class);
-Route::apiResource('cars', CarController::class);
-
 Route::apiResource('posts', PostsController::class);
-Route::apiResource('comments', CommentController::class);  //automatski kreira CRUD 
+// Rute sa rolnim middleware-om
 
-Route::middleware(['role:admin'])->group(function () {
-    Route::resource('posts', PostsController::class);
+// Admin pristup (koristi middleware za admina)
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+   // Route::apiResource('posts', PostsController::class);
+    Route::get('/user', [UserController::class, 'index']);
+    Route::put('/user/update', [UserController::class, 'updateRole']);
+    // Dodaj sve admin funkcionalnosti ovde
 });
-Route::middleware(['role:korisnik'])->group(function () {
-    Route::get('posts', [PostsController::class, 'index'])->name('posts.index');
+
+// Korisnik pristup (koristi middleware za korisnika)
+Route::middleware(['auth:sanctum', 'role:korisnik'])->group(function () {
+    //Route::get('posts', [PostsController::class, 'index'])->name('posts.index');
     Route::get('posts/{id}', [PostsController::class, 'show'])->name('posts.show');
-});
-Route::middleware(['role:not guest'])->group(function () {
-    Route::get('posts/public', [PostsController::class, 'publicPosts']);
+    // Dodaj ostale funkcionalnosti korisnika
 });
 
- //Route::apiResource('cars', CarController::class);
+// Public posts (bilo ko može da vidi public postove)
+Route::middleware('auth:sanctum')->group(function () {
+   // Route::get('posts/public', [PostsController::class, 'publicPosts']);
+});
 
+// Postavljanje i korišćenje drugih API resursa
+Route::apiResource('cars', CarController::class);
+Route::apiResource('comments', CommentController::class);
 
-// Route::get('/user', function (Request $request) {
-//     return $request->user();
-// })->middleware('auth:sanctum');
-
+// Fallback ruta (ako ništa drugo nije pronađeno)
 Route::fallback(function () {
     return 'Stranica nije pronađena';
 });
 
+// Logout ruta (samo za autentifikovane korisnike)
+Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
 
-// Route::middleware('auth:sanctum')->group(function () {
 
-//         //AuthController
-//     Route::post('/logout', [AuthController::class, 'logout']);
-//     Route::get('/user', [AuthController::class, 'userInfo']);
-//     Route::put('/user/update', [AuthController::class, 'update']);
-
-//         //UserController
-//     Route::get('/users', [UserController::class, 'index']);  //lista svih korisnika, dostupna samo administratorima
-//     Route::put('/users/{id}/role', [UserController::class, 'updateRole']);  //poziva metodu updateRole i sa id kosrisnicima
-//     Route::get('/users/search', [UserController::class, 'search']);  //za pretragu korisnika 
-
-//         //CommentController
-//     Route::apiResource('comments', CommentController::class);  //automatski kreira CRUD 
-
-//         //PostController
-//     Route::apiResource('posts', PostsController::class);
-//     //Route::apiResource('cars', CarController::class);
-
-// });
