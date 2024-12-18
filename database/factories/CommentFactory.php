@@ -11,17 +11,14 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class CommentFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
-    public function definition(): array
-    {
-        return [
-            'content' => $this->faker->paragraph, // Nasumičan sadržaj komentara
-            'user_id' => User::inRandomOrder()->first()->id, // Nasumičan korisnik
-            'post_id' => Posts::inRandomOrder()->first()->id, // Nasumičan post
+    /** * Define the model's default state. * *
+     *  @return array<string, mixed> */ 
+    public function definition():
+     array { $user = User::inRandomOrder()->first() ?: User::factory()->create(); 
+        $post = Posts::inRandomOrder()->first() ?: Posts::factory()->create(); 
+        return [ 'content' => $this->faker->paragraph, // Nasumičan sadržaj komentara 
+        'user_id' => $user->id, // Nasumičan korisnik 
+        'post_id' => $post->id, // Nasumičan post 
         ];
     }
 }

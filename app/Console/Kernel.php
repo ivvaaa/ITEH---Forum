@@ -21,6 +21,10 @@ class Kernel extends ConsoleKernel
         // Add your custom command here
     ];
 
+    protected $routeMiddleware = [
+        'role' => \App\Http\Middleware\RoleMiddleware::class,
+    ];
+
     /**
      * Define the application's command schedule.
      *

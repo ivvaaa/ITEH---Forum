@@ -29,16 +29,15 @@ class MigrateInOrder extends Command
     public function handle()
     {
         $migrations = ['2024_12_11_155219_create_roles_table',
-        '0001_01_01_000000_create_users_table', 
-        '0001_01_01_000001_create_cache_table', 
-        '0001_01_01_000002_create_jobs_table', 
+        '0001_01_01_000000_create_users_table',
+        '0001_01_01_000001_create_cache_table',  
         '2024_12_11_193409_create_cars_table',
         '2024_12_11_192848_create_post_table', 
         '2024_12_11_193135_create_comments_table',
-        '2024_12_12_123204_create_password_reset_token_table',  
-        '2024_12_12_123133_create_session_table', 
-        '2024_12_12_125612_add_extra_user', 
-        '2024_12_12_192507_create_cache_table', 
+        '2024_12_12_123204_create_password_reset_token_table.php',  
+        '2024_12_12_123133_create_session_table.php', 
+        '2024_12_12_125612_add_extra_user.php', 
+        '0001_01_01_000001_create_cache_table', 
         ];
 
         foreach ($migrations as $migration) {
