@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Posts;
 use Illuminate\Http\Request;
+use App\Http\Resources\PostResource;
+use App\Models\Comment;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 
@@ -14,8 +16,8 @@ class PostsController extends Controller
      */
     public function index()
     {
-        $posts = Posts::with(['comments', 'likes', 'user', 'topic'])->get();
-        return response()->json($posts);
+        $posts = Posts::all();
+        return PostResource::collection($posts);
     }
 
     /**
@@ -26,23 +28,32 @@ class PostsController extends Controller
         $validator = Validator::make($request->all(), [
             'content' => 'required|string',
             'car_id' => 'required|exists:cars,id',
-            'images' => 'nullable|string',
-            'other' => 'nullable|string'
+            'images' => 'nullable|array',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Validate each file in the array
+            'other' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
+        $imagePaths = [];
+        if ($request->has('images')) {
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('images', 'public');  // This will store in storage/app/public/images
+                 $imagePaths[] = 'storage/' . $path;  // Ensure the correct relative path is stored
+            }       
+        }
+
         $post = Posts::create([
             'content' => $request->content,
             'user_id' => Auth::id(),
             'car_id' => $request->car_id,
-            'images' => $request->images,
+            'images' => json_encode($imagePaths), //cuva putanju koa json string
             'other' => $request->other
         ]);
 
-        return response()->json($post);
+        return new PostResource($post);
     }
 
     /**
@@ -50,8 +61,8 @@ class PostsController extends Controller
      */
     public function show($id)
     {
-        $post = Posts::with(['comments', 'likes', 'user', 'topic'])->findOrFail($id);
-        return response()->json($post);
+        $post = Posts::findOrFail($id);
+        return new PostResource($post);
     }
 
     /**
@@ -79,7 +90,7 @@ class PostsController extends Controller
             'other' => $request->other
         ]);
 
-        return response()->json($post);
+        return new PostResource($post);
     }
 
     /**
@@ -87,10 +98,20 @@ class PostsController extends Controller
      */
     public function destroy($id)
     {
-        $post = Posts::findOrFail($id);
-        $post->delete();
+        $post = Post::findOrFail($id);
 
-        return response()->json(['message' => 'Post deleted successfully.']);
+        DB::transaction(function () use ($post) {
+            // Prvo brisemo sve komentare povezane sa ovim postom
+            Comment::where('post_id', $post->id)->delete();
+
+            // Zatim brisemo sve lajkove povezane sa ovim postom
+            Like::where('post_id', $post->id)->delete();
+
+            // Na kraju brisemo i sam post
+            $post->delete();
+        });
+
+        return response()->json(['message' => 'Post and related comments and likes deleted successfully.']);
     }
 }
 
