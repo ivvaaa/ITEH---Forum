@@ -12,27 +12,27 @@ use App\Http\Controllers\CarController;
 // Registracija i login
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-Route::apiResource('posts', PostsController::class);
 
 
 // Admin pristup (koristi middleware za admina)
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
-   // Route::apiResource('posts', PostsController::class);
+    Route::apiResource('posts', PostsController::class);
     Route::get('/user', [UserController::class, 'index']);
     Route::put('/user/update', [UserController::class, 'updateRole']);
+    Route::get('posts/{id}', [PostsController::class, 'show'])->name('posts.show');
     // Dodaj sve admin funkcionalnosti ovde
 });
 
 // Korisnik pristup (koristi middleware za korisnika)
 Route::middleware(['auth:sanctum', 'role:korisnik'])->group(function () {
-    //Route::get('posts', [PostsController::class, 'index'])->name('posts.index');
-    Route::get('posts/{id}', [PostsController::class, 'show'])->name('posts.show');
+    Route::get('posts', [PostsController::class, 'index']);
+    Route::delete('posts/{id}', [PostsController::class, 'destroy']);
     // Dodaj ostale funkcionalnosti korisnika
 });
 
 // Public posts (bilo ko može da vidi public postove)
 Route::middleware('auth:sanctum')->group(function () {
-   
+    Route::get('posts', [PostsController::class, 'index']);
 });
 
 // Postavljanje i korišćenje drugih API resursa
