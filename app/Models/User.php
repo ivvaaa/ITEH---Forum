@@ -6,6 +6,9 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Role;  
+use App\Models\Comment; 
+use App\Models\Posts;   
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -48,10 +51,6 @@ class User extends Authenticatable implements MustVerifyEmail
     public function comments()
     {
         return $this->hasMany(Comment::class);
-    }
-    
-    public function hasRole($roleName){
-        return $this->role && $this->role->name===$roleName;
     }
 
 }

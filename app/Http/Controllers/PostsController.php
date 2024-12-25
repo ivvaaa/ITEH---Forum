@@ -4,10 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\Posts;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use App\Http\Resources\PostResource;
 use App\Models\Comment;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+
+
+
 
 class PostsController extends Controller
 {
@@ -98,14 +103,15 @@ class PostsController extends Controller
      */
     public function destroy($id)
     {
-        $post = Post::findOrFail($id);
+        $post = Posts::findOrFail($id);
+        if (auth()->user()->role !== 'admin') {
+            return response()->json(['message' => 'You do not have permission to delete this post'], 403);
+        }
 
         DB::transaction(function () use ($post) {
             // Prvo brisemo sve komentare povezane sa ovim postom
             Comment::where('post_id', $post->id)->delete();
 
-            // Zatim brisemo sve lajkove povezane sa ovim postom
-            Like::where('post_id', $post->id)->delete();
 
             // Na kraju brisemo i sam post
             $post->delete();

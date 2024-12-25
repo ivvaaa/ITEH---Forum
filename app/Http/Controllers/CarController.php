@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Car;
 use App\Http\Resources\CarResource;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+
 
 class CarController extends Controller
 {
@@ -17,17 +19,7 @@ class CarController extends Controller
         return response()->json($cars);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    // public function create()
-    // {
-    //     //
-    // }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -57,14 +49,6 @@ class CarController extends Controller
         $car = Car::findOrFail($id);
         return new CarResource($car);
     }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    // public function edit(Car $car)
-    // {
-    //     //
-    // }
 
     /**
      * Update the specified resource in storage.

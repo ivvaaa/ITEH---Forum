@@ -4,13 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+
 
 class UserController extends Controller
 {
     public function index()
     {
         $users = User::all();  //svi korisnici iz baze
-        return response()->json($users);  //laravel funkcija za kreiranje laravel odgovora
+        return response()->json($users); 
     }
 
     public function updateRole(Request $request, $id)

@@ -9,8 +9,6 @@ class Car extends Model
 {
     /** @use HasFactory<\Database\Factories\CarFactory> */
     use HasFactory;
-    use HasFactory;
-    use HasFactory;
 
     protected $fillable = [
         'make',

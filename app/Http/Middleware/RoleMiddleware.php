@@ -5,6 +5,8 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\Auth;
+
 
 class RoleMiddleware
 {
@@ -15,8 +17,9 @@ class RoleMiddleware
      */
     public function handle( $request,Closure $next, $role)
     {
-        if(!auth()->check() || !auth()->user()->hasRole($role)){
-            abort (403,'Nije dozvoljena radnja');
+
+        if (!Auth::check() || !Auth::user()->hasRole($role)) {
+            abort(403, 'Nije dozvoljena radnja');
         }
 
         return $next($request);

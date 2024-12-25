@@ -1,50 +1,67 @@
 <?php
 
+namespace App\Http;
 
+use Illuminate\Foundation\Http\Kernel as HttpKernel;
+use Illuminate\Auth\Middleware\Authenticate;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use App\Http\Middleware\CustomRoleMiddleware;
 
-namespace App\Console;
-
-use Illuminate\Console\Scheduling\Schedule;
-use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
-
-class Kernel extends ConsoleKernel
+class Kernel extends HttpKernel
 {
     /**
-     * The Artisan commands provided by your application.
+     * The application's global HTTP middleware stack.
      *
      * @var array
      */
-    protected $commands = [
-        // Registering custom commands
-        \App\Console\Commands\MigrateInOrder::class,
-
-        // Add your custom command here
+    protected $middleware = [
+        // \App\Http\Middleware\TrustProxies::class,
+        // \Illuminate\Http\Middleware\HandleCors::class,
+        // \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
+        // \App\Http\Middleware\CheckForMaintenanceMode::class,
+        // \Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance::class,
+        // \Illuminate\Session\Middleware\StartSession::class,
+        // \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+        // \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        // \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+        // \Illuminate\Session\Middleware\EncryptCookies::class,
+        // \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+        // \Illuminate\Session\Middleware\StartSession::class,
+        // \Illuminate\Routing\Middleware\ThrottleRequests::class,
+        // \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
+        // \App\Http\Middleware\VerifyCsrfToken::class,  // Dodato za CSRF zaštitu
     ];
 
+    /**
+     * The application's route middleware groups.
+     *
+     * @var array
+     */
+    protected $middlewareGroups = [
+        // 'web' => [
+        //     \App\Http\Middleware\EncryptCookies::class,
+        //     \Illuminate\Session\Middleware\StartSession::class,
+        //     \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+        //     \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        //     \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,  // CSRF zaštita za web
+        // ],
+
+        // 'api' => [
+        //     'throttle:api',
+        //     \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        // ],
+    ];
+
+    /**
+     * The application's middleware aliases.
+     *
+     * @var array
+     */
     protected $routeMiddleware = [
-        'role' => \App\Http\Middleware\RoleMiddleware::class,
+        // 'auth' => Authenticate::class,  // Za autentifikaciju korisnika
+        // 'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
+        // 'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
+        // 'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+        'role' => \App\Http\Middleware\RoleMiddleware::class,  // Tvoj middleware za proveru uloga
     ];
-
-    /**
-     * Define the application's command schedule.
-     *
-     * @param  \Illuminate\Console\Scheduling\Schedule  $schedule
-     * @return void
-     */
-    protected function schedule(Schedule $schedule)
-    {
-        // Define your scheduled commands here
-    }
-
-    /**
-     * Register the commands for the application.
-     *
-     * @return void
-     */
-    protected function commands()
-    {
-        $this->load(__DIR__.'/Commands');
-
-        require base_path('routes/console.php');
-    }
 }
