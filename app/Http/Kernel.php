@@ -29,7 +29,7 @@ class Kernel extends HttpKernel
         // \Illuminate\Session\Middleware\StartSession::class,
         // \Illuminate\Routing\Middleware\ThrottleRequests::class,
         // \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
-        // \App\Http\Middleware\VerifyCsrfToken::class,  // Dodato za CSRF zaštitu
+        // \App\Http\Middleware\VerifyCsrfToken::class,  // Za CSRF zaštitu
     ];
 
     /**
@@ -38,18 +38,19 @@ class Kernel extends HttpKernel
      * @var array
      */
     protected $middlewareGroups = [
-        // 'web' => [
-        //     \App\Http\Middleware\EncryptCookies::class,
-        //     \Illuminate\Session\Middleware\StartSession::class,
-        //     \Illuminate\View\Middleware\ShareErrorsFromSession::class,
-        //     \Illuminate\Routing\Middleware\SubstituteBindings::class,
-        //     \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,  // CSRF zaštita za web
-        // ],
+        'web' => [
+            \App\Http\Middleware\EncryptCookies::class,
+            \Illuminate\Session\Middleware\StartSession::class,
+            \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\VerifyCsrfToken::class,  // CSRF zaštita za web
+        ],
 
-        // 'api' => [
-        //     'throttle:api',
-        //     \Illuminate\Routing\Middleware\SubstituteBindings::class,
-        // ],
+        'api' => [
+            'throttle:api',
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            'auth:sanctum',  // Middleware za autentifikaciju putem Sanctum
+        ],
     ];
 
     /**
@@ -58,10 +59,7 @@ class Kernel extends HttpKernel
      * @var array
      */
     protected $routeMiddleware = [
-        // 'auth' => Authenticate::class,  // Za autentifikaciju korisnika
-        // 'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
-        // 'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
-        // 'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+        'auth' => \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,  // Za autentifikaciju korisnika putem Sanctum
         'role' => \App\Http\Middleware\RoleMiddleware::class,  // Tvoj middleware za proveru uloga
     ];
 }

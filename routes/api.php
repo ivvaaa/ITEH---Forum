@@ -13,7 +13,7 @@ use App\Http\Controllers\CarController;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::apiResource('posts', PostsController::class);
-// Rute sa rolnim middleware-om
+
 
 // Admin pristup (koristi middleware za admina)
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
@@ -32,7 +32,7 @@ Route::middleware(['auth:sanctum', 'role:korisnik'])->group(function () {
 
 // Public posts (bilo ko može da vidi public postove)
 Route::middleware('auth:sanctum')->group(function () {
-   // Route::get('posts/public', [PostsController::class, 'publicPosts']);
+   
 });
 
 // Postavljanje i korišćenje drugih API resursa
