@@ -4,15 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Laravel\Sanctum\HasApiTokens;
 
 class Posts extends Model
 { 
-    use HasFactory;
+    use HasFactory, HasApiTokens;
 
     protected $fillable = [
         'content',
         'user_id',
-        'car_id', //Ovde sam menjao iz categoryid u car_id
+        'car_id', 
         'images',
         'other'
     ];

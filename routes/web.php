@@ -12,4 +12,4 @@ Route::get('/about', function () {
     return view('about');
 });
 
-Route::resource('users', UserController::class);
+
