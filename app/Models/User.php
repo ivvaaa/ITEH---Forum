@@ -41,17 +41,17 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function posts()
     {
-        return $this->hasMany(Post::class);
+        return $this->hasMany(Posts::class);
     }
 
     public function comments()
     {
         return $this->hasMany(Comment::class);
     }
-
-    public function likes()
-    {
-        return $this->hasMany(Like::class);
+    
+    public function hasRole($roleName){
+        return $this->role && $this->role->name===$roleName;
     }
+
 }
 

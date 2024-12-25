@@ -21,19 +21,14 @@ class Posts extends Model
     {
         return $this->hasMany(Comment::class);
     }
- 
-    public function likes()
-    {
-        return $this->hasMany(Like::class);
-    }
- 
+
     public function user()
     {
         return $this->belongsTo(User::class);
     }
  
-    public function topic()
+    public function car()
     {
-        return $this->belongsTo(Topic::class);
+        return $this->belongsTo(Car::class);
     }
 }
