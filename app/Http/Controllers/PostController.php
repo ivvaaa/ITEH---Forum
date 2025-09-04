@@ -41,8 +41,8 @@ class PostController extends Controller
         if ($request->has('images')) {
             foreach ($request->file('images') as $image) {
                 $path = $image->store('images', 'public');  // This will store in storage/app/public/images
-                 $imagePaths[] = 'storage/' . $path;  // Ensure the correct relative path is stored
-            }       
+                $imagePaths[] = 'storage/' . $path;  // Ensure the correct relative path is stored
+            }
         }
 
         $post = Post::create([
@@ -93,25 +93,19 @@ class PostController extends Controller
         return new PostResource($post);
     }
 
-    /**
-     * Remove the specified post from storage.
-     */
+
+
     public function destroy($id)
     {
         $post = Post::findOrFail($id);
 
-        DB::transaction(function () use ($post) {
-            // Prvo brisemo sve komentare povezane sa ovim postom
-            Comment::where('post_id', $post->id)->delete();
+        // Prvo obriši komentare vezane za post
+        Comment::where('post_id', $post->id)->delete();
 
-            // Zatim brisemo sve lajkove povezane sa ovim postom
-            Like::where('post_id', $post->id)->delete();
+        // Onda obriši post
+        $post->delete();
 
-            // Na kraju brisemo i sam post
-            $post->delete();
-        });
-
-        return response()->json(['message' => 'Post and related comments and likes deleted successfully.']);
+        return response()->json(['message' => 'Post and related comments deleted successfully.']);
     }
 }
 

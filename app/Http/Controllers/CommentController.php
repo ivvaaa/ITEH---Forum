@@ -19,8 +19,8 @@ class CommentController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'post_id' => ['required','integer','exists:posts,id'],
-            'content' => ['required','string','max:2000'],
+            'post_id' => ['required', 'integer', 'exists:posts,id'],
+            'content' => ['required', 'string', 'max:2000'],
         ]);
 
         $data['user_id'] = $request->user()->id;
@@ -44,7 +44,7 @@ class CommentController extends Controller
         }
 
         $data = $request->validate([
-            'content' => ['required','string','max:2000'],
+            'content' => ['required', 'string', 'max:2000'],
         ]);
 
         $comment->update($data);
@@ -61,7 +61,8 @@ class CommentController extends Controller
 
         $comment->delete();
 
-        return response()->json(null, 204);
+        return response()->json(data: ['message' => 'Comment deleted successfully.']);
+
     }
 }
 

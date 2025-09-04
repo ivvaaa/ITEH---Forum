@@ -105,11 +105,5 @@ class UserController extends Controller
      * Not supported in single-role model. Keep the route for compatibility,
      * but return a clear message.
      */
-    public function assignRole(Request $request, $id)
-    {
-        return response()->json([
-            'message' => 'Not supported in single-role model. Use PUT /api/users/{id}/role.'
-        ], 400);
-    }
 
 }
