@@ -1,7 +1,7 @@
 <?php
 
 namespace Database\Seeders;
-use App\Models\Posts;
+use App\Models\Post;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -13,6 +13,6 @@ class PostSeeder extends Seeder
     public function run(): void
     {
        // Kreiramo 10 nasumičnih postova
-       Posts::factory(10)->create();
+       Post::factory(10)->create();
     }
 }

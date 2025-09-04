@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -12,47 +13,56 @@ use Illuminate\Support\Facades\Storage;
 class AuthController extends Controller
 {
     public function register(Request $request)
-    {
-        // Validacija ulaznih podataka
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-            'role_id' => 'required|integer',
-            'interests' => 'nullable|array',
-            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'bio' => 'nullable|string|max:500',
-            'birthdate' => 'nullable|date',
-        ]);
+{
+    // If you send a file, use form-data; if JSON, omit profile_photo
+    $rules = [
+        'name'                  => ['required','string','max:255'],
+        'email'                 => ['required','string','email','max:255','unique:users,email'],
+        'password'              => ['required','string','min:8','confirmed'],
+        // role_id optional: default to 'viewer' if missing
+        'role_id'               => ['nullable','integer','exists:roles,id'],
+        'interests'             => ['nullable','array'],             // e.g. ["cars","music"]
+        'profile_photo'         => ['nullable','image','mimes:jpeg,png,jpg,gif,svg','max:2048'],
+        'bio'                   => ['nullable','string','max:500'],
+        'birthdate'             => ['nullable','date'],
+    ];
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
+    $validated = $request->validate($rules);
 
-        // Sačuvajte profilnu sliku ako postoji
-        $profilePhotoPath = null;
-        if ($request->hasFile('profile_photo')) {
-            $profilePhotoPath = $request->file('profile_photo')->store('profile_photos', 'public');
-        }
-
-        // Kreiranje novog korisnika
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role_id' => $request->role_id,
-            'interests' => $request->interests,
-            'profile_photo' => $profilePhotoPath,
-            'bio' => $request->bio,
-            'birthdate' => $request->birthdate,
-        ]);
-
-        
-
-        return response()->json([
-            'message' => 'Registration successful.  ',
-        ], 201);
+    // Resolve role_id: use provided or default to 'viewer'
+    if (empty($validated['role_id'])) {
+        $validated['role_id'] = \App\Models\Role::where('name','viewer')->value('id');
     }
+
+    // Handle profile photo upload (optional)
+    $profilePhotoPath = null;
+    if ($request->hasFile('profile_photo')) {
+        // Ensure you've run: php artisan storage:link
+        $profilePhotoPath = $request->file('profile_photo')->store('profile_photos', 'public');
+    }
+
+    // Create user
+    $user = \App\Models\User::create([
+        'name'          => $validated['name'],
+        'email'         => $validated['email'],
+        'password'      => \Illuminate\Support\Facades\Hash::make($validated['password']),
+        'role_id'       => $validated['role_id'],
+        'interests'     => $validated['interests'] ?? null,   // column should be JSON nullable
+        'profile_photo' => $profilePhotoPath,
+        'bio'           => $validated['bio'] ?? null,
+        'birthdate'     => $validated['birthdate'] ?? null,
+    ]);
+
+    // Optionally, return a token so the user is logged in right away
+    $token = $user->createToken('auth_token')->plainTextToken;
+
+    return response()->json([
+        'message'      => 'Registration successful.',
+        'access_token' => $token,
+        'token_type'   => 'Bearer',
+        'user'         => $user,
+    ], 201);
+}
 //----------------------------------------------------------------------------------
 public function login(Request $request)
     {
@@ -88,6 +98,7 @@ public function login(Request $request)
     {
         // Brisanje trenutnog tokena korisnika
         $request->user()->currentAccessToken()->delete();
+        $request->user()->tokens()->delete();
 
         return response()->json([
             'message' => 'Successfully logged out',
@@ -136,7 +147,7 @@ public function login(Request $request)
 
         // Ažuriranje lozinke ako je postavljena nova
         if ($request->password) {
-            $user->password = Hash::make($request->password);
+            $user->password = bcrypt($request->password);
         }
 
         $user->save();

@@ -2,23 +2,16 @@
 
 namespace Database\Seeders;
 
-use App\Models\Role;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\Role;
 
 class RoleSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     *
-     * @return void
-     */
     public function run(): void
     {
-        // Kreiranje uloga
-    //     Role::create(['name' => 'korisnik']);
-    //     Role::create(['name' => 'moderator']);
-    //     Role::create(['name' => 'admin']);
-    // 
+        // Create canonical roles exactly once
+        foreach (['admin','user','viewer'] as $name) {
+            Role::firstOrCreate(['name' => $name]);
+        }
     }
 }

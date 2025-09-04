@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Models\Posts;
+use App\Models\Post;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -15,7 +15,7 @@ class CommentFactory extends Factory
      *  @return array<string, mixed> */ 
     public function definition():
      array { $user = User::inRandomOrder()->first() ?: User::factory()->create(); 
-        $post = Posts::inRandomOrder()->first() ?: Posts::factory()->create(); 
+        $post = Post::inRandomOrder()->first() ?: Post::factory()->create(); 
         return [ 'content' => $this->faker->paragraph, // Nasumičan sadržaj komentara 
         'user_id' => $user->id, // Nasumičan korisnik 
         'post_id' => $post->id, // Nasumičan post 

@@ -12,14 +12,15 @@ return new class extends Migration
         // Tabela 'users'
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->string('password');
-            $table->rememberToken();
-            $table->foreignId('role_id') // Dodavanje role_id kolone
-                  ->constrained('roles') // Povezivanje sa tabelom 'roles'
-                  ->onDelete('cascade'); // Ako se role obriše, brišu se i korisnici sa tom ulogom
-            $table->timestamps();
+$table->foreignId('role_id')->constrained()->cascadeOnDelete();
+$table->string('name');
+$table->string('email')->unique();
+$table->string('password');
+$table->json('interests')->nullable();     // important if you pass arrays
+$table->string('profile_photo')->nullable();
+$table->string('bio', 500)->nullable();
+$table->date('birthdate')->nullable();
+$table->timestamps();
         });
 
     }

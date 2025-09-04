@@ -2,22 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Posts;
+use App\Models\Post;
 use Illuminate\Http\Request;
 use App\Http\Resources\PostResource;
 use App\Models\Comment;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 
-class PostsController extends Controller
+class PostController extends Controller
 {
     /**
      * Display a listing of the posts.
      */
     public function index()
     {
-        $posts = Posts::all();
-        return PostResource::collection($posts);
+        $post = Post::all();
+        return PostResource::collection($post);
     }
 
     /**
@@ -45,7 +45,7 @@ class PostsController extends Controller
             }       
         }
 
-        $post = Posts::create([
+        $post = Post::create([
             'content' => $request->content,
             'user_id' => Auth::id(),
             'car_id' => $request->car_id,
@@ -61,7 +61,7 @@ class PostsController extends Controller
      */
     public function show($id)
     {
-        $post = Posts::findOrFail($id);
+        $post = Post::findOrFail($id);
         return new PostResource($post);
     }
 
@@ -81,7 +81,7 @@ class PostsController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        $post = Posts::findOrFail($id);
+        $post = Post::findOrFail($id);
 
         $post->update([
             'content' => $request->content ?? $post->content,

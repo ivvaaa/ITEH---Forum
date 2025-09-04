@@ -34,9 +34,9 @@ class MigrateInOrder extends Command
         '2024_12_11_193409_create_cars_table',
         '2024_12_11_192848_create_post_table', 
         '2024_12_11_193135_create_comments_table',
-        '2024_12_12_123204_create_password_reset_token_table.php',  
-        '2024_12_12_123133_create_session_table.php', 
-        '2024_12_12_125612_add_extra_user.php', 
+        '2024_12_12_123204_create_password_reset_token_table',  
+        '2024_12_12_123133_create_session_table', 
+        '2024_12_12_125612_add_extra_user', 
         '0001_01_01_000001_create_cache_table', 
         ];
 
