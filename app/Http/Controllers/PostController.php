@@ -2,22 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Posts;
+use App\Models\Post;
 use Illuminate\Http\Request;
 use App\Http\Resources\PostResource;
 use App\Models\Comment;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 
-class PostsController extends Controller
+class PostController extends Controller
 {
     /**
      * Display a listing of the posts.
      */
     public function index()
     {
-        $posts = Posts::all();
-        return PostResource::collection($posts);
+        $post = Post::all();
+        return PostResource::collection($post);
     }
 
     /**
@@ -41,11 +41,11 @@ class PostsController extends Controller
         if ($request->has('images')) {
             foreach ($request->file('images') as $image) {
                 $path = $image->store('images', 'public');  // This will store in storage/app/public/images
-                 $imagePaths[] = 'storage/' . $path;  // Ensure the correct relative path is stored
-            }       
+                $imagePaths[] = 'storage/' . $path;  // Ensure the correct relative path is stored
+            }
         }
 
-        $post = Posts::create([
+        $post = Post::create([
             'content' => $request->content,
             'user_id' => Auth::id(),
             'car_id' => $request->car_id,
@@ -61,7 +61,7 @@ class PostsController extends Controller
      */
     public function show($id)
     {
-        $post = Posts::findOrFail($id);
+        $post = Post::findOrFail($id);
         return new PostResource($post);
     }
 
@@ -81,7 +81,7 @@ class PostsController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        $post = Posts::findOrFail($id);
+        $post = Post::findOrFail($id);
 
         $post->update([
             'content' => $request->content ?? $post->content,
@@ -93,25 +93,19 @@ class PostsController extends Controller
         return new PostResource($post);
     }
 
-    /**
-     * Remove the specified post from storage.
-     */
+
+
     public function destroy($id)
     {
         $post = Post::findOrFail($id);
 
-        DB::transaction(function () use ($post) {
-            // Prvo brisemo sve komentare povezane sa ovim postom
-            Comment::where('post_id', $post->id)->delete();
+        // Prvo obriši komentare vezane za post
+        Comment::where('post_id', $post->id)->delete();
 
-            // Zatim brisemo sve lajkove povezane sa ovim postom
-            Like::where('post_id', $post->id)->delete();
+        // Onda obriši post
+        $post->delete();
 
-            // Na kraju brisemo i sam post
-            $post->delete();
-        });
-
-        return response()->json(['message' => 'Post and related comments and likes deleted successfully.']);
+        return response()->json(['message' => 'Post and related comments deleted successfully.']);
     }
 }
 

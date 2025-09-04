@@ -3,63 +3,107 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Role;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
+    /**
+     * GET /api/users
+     * List users with their role (lean payload).
+     */
     public function index()
     {
-        $users = User::all();  //svi korisnici iz baze
-        return response()->json($users);  //laravel funkcija za kreiranje laravel odgovora
+        return User::with(['role:id,name'])
+            ->select('id', 'name', 'email', 'role_id')
+            ->orderBy('id')
+            ->get();
     }
 
-    public function updateRole(Request $request, $id)
+    /**
+     * GET /api/users/search
+     * Supported filters:
+     *  - q      : free text across name/email
+     *  - name   : partial match on name
+     *  - email  : partial match on email
+     *  - role   : role name (e.g. admin/user/viewer), partial match allowed
+     *  - page, per_page: pagination controls
+     */
+    public function search(Request $request)
     {
-        // Validacija role_id parametra
-        $validator = Validator::make($request->all(), [
-            'role_id' => 'required|integer|exists:roles,id',  
+        $data = $request->validate([
+            'q'        => ['sometimes', 'string', 'max:255'],
+            'name'     => ['sometimes', 'string', 'max:255'],
+            'email'    => ['sometimes', 'string', 'max:255'],
+            'role'     => ['sometimes', 'string', 'max:100'],
+            'page'     => ['sometimes', 'integer', 'min:1'],
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
         ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+        if (!$request->hasAny(['q', 'name', 'email', 'role'])) {
+            return response()->json([
+                'message' => 'Provide at least one filter: q, name, email, or role.'
+            ], 422);
         }
 
-        // Pronalazenje korisnika po ID-u
-        $user = User::findOrFail($id);
+        // LIKE helper that escapes wildcards
+        $like = function (string $term) {
+            $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $term);
+            return "%{$escaped}%";
+        };
 
-        // azuriranje role_id
-        $user->role_id = $request->role_id;
-        $user->save();  //sacuva u bazi
+        $perPage = $data['per_page'] ?? 15;
 
-        return response()->json(['message' => 'User role updated - uspesno.']);
+        $query = User::query()
+            ->with(['role:id,name'])
+            ->select('id', 'name', 'email', 'role_id')
+            ->when(isset($data['q']), function ($q) use ($data, $like) {
+                $needle = $like($data['q']);
+                $q->where(function ($qq) use ($needle) {
+                    $qq->where('name', 'like', $needle)
+                       ->orWhere('email', 'like', $needle);
+                });
+            })
+            ->when(isset($data['name']), function ($q) use ($data, $like) {
+                $q->where('name', 'like', $like($data['name']));
+            })
+            ->when(isset($data['email']), function ($q) use ($data, $like) {
+                $q->where('email', 'like', $like($data['email']));
+            })
+            ->when(isset($data['role']), function ($q) use ($data, $like) {
+                $q->whereHas('role', function ($rq) use ($data, $like) {
+                    $rq->where('name', 'like', $like($data['role']));
+                });
+            })
+            ->orderBy('id');
+
+        // Return paginated JSON (includes meta: current_page, total, etc.)
+        return $query->paginate($perPage);
     }
 
-    public function search(Request $request)   //dinamicko pretrazivanje
+    /**
+     * PUT /api/users/{id}/role
+     * Single-role model: updates users.role_id to a valid Role id.
+     * Body: { "role_id": <int> }
+     */
+    public function updateRole(Request $request, $id)
     {
-        $query = User::query();
+        $payload = $request->validate([
+            'role_id' => ['required', 'integer', 'exists:roles,id'],
+        ]);
 
-        // Pretraga na osnovu imena
-        if ($request->has('name')) {
-            $query->where('name', 'like', '%' . $request->name . '%');
-        }
+        $user = User::findOrFail($id);
+        $user->role_id = $payload['role_id'];
+        $user->save();
 
-        // Pretraga na osnovu email-a
-        if ($request->has('email')) {
-            $query->where('email', 'like', '%' . $request->email . '%');
-        }
-
-        // Pretraga na osnovu role_id
-        if ($request->has('role_id')) {
-            $query->where('role_id', $request->role_id);
-        }
-
-        // Vracanje rezultata pretrage
-        $users = $query->get();
-
-        return response()->json($users);
+        // Return lean payload
+        return response()->json($user->only('id', 'name', 'email', 'role_id'));
     }
 
-
-
+    /**
+     * POST /api/users/{id}/assign-role
+     * Not supported in single-role model. Keep the route for compatibility,
+     * but return a clear message.
+     */
 
 }

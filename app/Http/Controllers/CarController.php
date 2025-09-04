@@ -3,103 +3,73 @@
 namespace App\Http\Controllers;
 
 use App\Models\Car;
-use App\Http\Resources\CarResource;
 use Illuminate\Http\Request;
 
 class CarController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    // GET /api/cars
+    public function index(Request $request)
     {
-        $cars = Car::all();
-        return response()->json($cars);
+        // Ako želiš samo kola ulogovanog korisnika, odkomentariši sledeću liniju:
+        // return Car::where('user_id', $request->user()->id)->orderBy('id')->get();
+
+        return Car::with('user:id,name')
+            ->orderBy('id')
+            ->get();
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    // public function create()
-    // {
-    //     //
-    // }
-
-    /**
-     * Store a newly created resource in storage.
-     */
+    // POST /api/cars
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'make' => 'required|string|max:255',
-            'model' => 'required|string|max:255',
-            'year' => 'required|integer|min:1900|max:' . date('Y'),
+        $data = $request->validate([
+            'make'  => ['required','string','max:255'],
+            'model' => ['required','string','max:255'],
+            'year'  => ['required','integer','between:1900,2099'],
+            'color' => ['nullable','string','max:255'],
         ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
+        $data['user_id'] = $request->user()->id;
 
-        $car = Car::create([
-            'make' => $request->make,
-            'model' => $request->model,
-            'year' => $request->year,
-        ]);
+        $car = Car::create($data);
 
-        return response()->json(['message' => 'Car created successfully.', 'car' => $car], 201);
+        return response()->json($car, 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show($id)
+    // GET /api/cars/{car}
+    public function show(Car $car)
     {
-        $car = Car::findOrFail($id);
-        return new CarResource($car);
+        return $car->load('user:id,name');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    // public function edit(Car $car)
-    // {
-    //     //
-    // }
-
-    /**
-     * Update the specified resource in storage.
-     */
+    // PUT /api/cars/{car}
     public function update(Request $request, Car $car)
     {
-        $validator = Validator::make($request->all(), [
-            'make' => 'required|string|max:255',
-            'model' => 'required|string|max:255',
-            'year' => 'required|integer|min:1900|max:' . date('Y'),
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+        // dozvoli izmene samo vlasniku
+        if ($car->user_id !== $request->user()->id) {
+            return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        $car = Car::findOrFail($id);
-
-        $car->update([
-            'make' => $request->make,
-            'model' => $request->model,
-            'year' => $request->year,
+        $data = $request->validate([
+            'make'  => ['sometimes','string','max:255'],
+            'model' => ['sometimes','string','max:255'],
+            'year'  => ['sometimes','integer','between:1900,2099'],
+            
         ]);
 
-        return response()->json(['message' => 'Car updated successfully.', 'car' => $car]);
+        $car->update($data);
+
+        return response()->json($car);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Car $car)
+    // DELETE /api/cars/{car}
+    public function destroy(Request $request, Car $car)
     {
-        $car = Car::findOrFail($id);
-        $car->delete();
+        if ($car->user_id !== $request->user()->id) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
 
-        return response()->json(['message' => 'Car deleted successfully.']);
+        $car->delete();
+                return response()->json(data: ['message' => 'Car deleted successfully.']);
+
     }
 }

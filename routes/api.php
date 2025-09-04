@@ -1,50 +1,43 @@
-
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\CommentController;
-use App\Http\Controllers\PostsController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\PostController;
 use App\Http\Controllers\CarController;
+use App\Http\Controllers\CommentController;
+use App\Http\Controllers\PasswordResetController;
 
-// Registracija i login
+// Public auth
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-Route::apiResource('posts', PostsController::class);
-// Rute sa rolnim middleware-om
 
-// Admin pristup (koristi middleware za admina)
-Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
-   // Route::apiResource('posts', PostsController::class);
-    Route::get('/user', [UserController::class, 'index']);
-    Route::put('/user/update', [UserController::class, 'updateRole']);
-    // Dodaj sve admin funkcionalnosti ovde
-});
+// Public read-only posts (adjust if you want protected)
+// Route::apiResource('posts', PostController::class)->only(['index','show']);
 
-// Korisnik pristup (koristi middleware za korisnika)
-Route::middleware(['auth:sanctum', 'role:korisnik'])->group(function () {
-    //Route::get('posts', [PostsController::class, 'index'])->name('posts.index');
-    Route::get('posts/{id}', [PostsController::class, 'show'])->name('posts.show');
-    // Dodaj ostale funkcionalnosti korisnika
-});
+// Any logged-in user   
 
-// Public posts (bilo ko može da vidi public postove)
+Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLinkEmail']);
+Route::post('/reset-password', [PasswordResetController::class, 'reset']);
+Route::get('reset-password/{token}', function ($token) {
+    return view('auth.reset-password', ['token' => $token]);
+})->name('password.reset');
+
 Route::middleware('auth:sanctum')->group(function () {
-   // Route::get('posts/public', [PostsController::class, 'publicPosts']);
+    Route::get('/user', [AuthController::class, 'userInfo']);
+    Route::post('/logout', [AuthController::class, 'logout']);
+
+    Route::apiResource('cars', CarController::class);
+    Route::apiResource('comments', CommentController::class);
 });
 
-// Postavljanje i korišćenje drugih API resursa
-Route::apiResource('cars', CarController::class);
-Route::apiResource('comments', CommentController::class);
+// Admin-only
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::get('/users', [UserController::class, 'index']);                   // list users
+    Route::get('/users/search', [UserController::class, 'search']);           // search
+    Route::put('/users/{id}/role', [UserController::class, 'updateRole']);    // update by id
+    Route::apiResource('posts', PostController::class);
 
-// Fallback ruta (ako ništa drugo nije pronađeno)
-Route::fallback(function () {
-    return 'Stranica nije pronađena';
 });
 
-// Logout ruta (samo za autentifikovane korisnike)
-Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
 
 
