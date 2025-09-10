@@ -28,6 +28,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::apiResource('cars', CarController::class);
     Route::apiResource('comments', CommentController::class);
+    Route::apiResource('posts', PostController::class);
+
 });
 
 // Admin-only
@@ -35,7 +37,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::get('/users', [UserController::class, 'index']);                   // list users
     Route::get('/users/search', [UserController::class, 'search']);           // search
     Route::put('/users/{id}/role', [UserController::class, 'updateRole']);    // update by id
-    Route::apiResource('posts', PostController::class);
+    //Route::apiResource('posts', PostController::class);
 
 });
 
