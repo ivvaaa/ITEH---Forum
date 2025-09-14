@@ -1,54 +1,57 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-//import './Navbar.css';  
+import React from "react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import api from "../api/axios";
 
-const Navbar = ({ isLoggedIn, setIsLoggedIn, roleId }) => {
-  let navigate = useNavigate();
+function getUser() {
+  try { return JSON.parse(localStorage.getItem("user")) || JSON.parse(sessionStorage.getItem("user")) || null; }
+  catch { return null; }
+}
 
-  const handleLogout = async () => {
-    try {
-      await axios.post('http://127.0.0.1:8000/api/logout', {}, {
-        headers: {
-          'Authorization': `Bearer ${sessionStorage.getItem('auth_token')}`
-        }
-      });
+export default function Navbar({ isLoggedIn, setIsLoggedIn, roleId }) {
+  const nav = useNavigate();
+  const user = getUser();
 
-      sessionStorage.removeItem('auth_token');
-      sessionStorage.removeItem('role_id');
-      setIsLoggedIn(false);
-      navigate("/");
-    } catch (error) {
-      console.error('Logout failed:', error);
-      alert('An error occurred during logout');
-    }
+  const logout = async () => {
+    try { await api.post("/api/logout"); } catch {}
+    // počisti oba storage-a (pošto koristiš sessionStorage u App-u)
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    sessionStorage.removeItem("auth_token");
+    sessionStorage.removeItem("user");
+    sessionStorage.removeItem("role_id");
+    setIsLoggedIn(false);
+    nav("/");
   };
 
-  return (
-    <nav className="navbar">
-      <Link to="/" className="navbar-brand">My App</Link>
-      <div className="navbar-links">
-        {isLoggedIn ? (
-          <>
-            {/* {roleId === 1 && <Link to="/posts" className="navbar-link">Posts</Link>}
-            {roleId === 2 && <Link to="/moderator" className="navbar-link">Moderator</Link>}
-            {roleId === 3 && (
-              <>
-                <Link to="/admin" className="navbar-link">Admin</Link>
-                <Link to="/adminStatistike" className="navbar-link">Statistike</Link>
-              </>
-            )} */}
-            <button onClick={handleLogout} className="navbar-link">Logout</button>
-          </>
-        ) : (
-          <>
-            <Link to="/login" className="navbar-link">Login</Link>
-            <Link to="/register" className="navbar-link">Register</Link>
-          </>
-        )}
-      </div>
-    </nav>
-  );
-};
+  const linkCls = ({ isActive }) =>
+    "px-3 py-2" + (isActive ? " font-semibold underline" : "");
 
-export default Navbar;
+  return (
+    <header style={{borderBottom:"1px solid #eee"}}>
+      <div style={{maxWidth:1000, margin:"0 auto", padding:"10px 16px", display:"flex", alignItems:"center", justifyContent:"space-between"}}>
+        <Link to="/" style={{fontWeight:700, textDecoration:"none"}}>ITEH Forum</Link>
+        <nav style={{display:"flex", gap:8, alignItems:"center"}}>
+          <NavLink to="/" className={linkCls}>Home</NavLink>
+          {/* Dodaj i druge linkove po želji */}
+          {/* <NavLink to="/threads" className={linkCls}>Teme</NavLink> */}
+
+          {!isLoggedIn ? (
+            <>
+              <NavLink to="/login" className={linkCls}>Login</NavLink>
+              <NavLink to="/register" className={linkCls}>Register</NavLink>
+            </>
+          ) : (
+            <>
+              {roleId === 3 && <NavLink to="/admin" className={linkCls}>Admin</NavLink>}
+              {roleId === 2 && <NavLink to="/moderator" className={linkCls}>Moderator</NavLink>}
+              <span style={{color:"#555"}}>{user?.name ? `Hi, ${user.name}` : ""}</span>
+              <button onClick={logout} style={{padding:"6px 10px", border:"1px solid #ddd", borderRadius:8, cursor:"pointer"}}>
+                Logout
+              </button>
+            </>
+          )}
+        </nav>
+      </div>
+    </header>
+  );
+}
