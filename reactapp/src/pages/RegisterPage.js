@@ -9,7 +9,7 @@ import TextAreaInput from '../components/TextAreaInput';
 import { useNavigate } from 'react-router-dom';
 
 const Register = () => {
-  let navigate= useNavigate();
+  let navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -17,10 +17,10 @@ const Register = () => {
     password: '',
     password_confirmation: '',
     role_id: '1',  // Setovanje role_id na 1
-    interests: '',
-    profile_photo: null,
-    bio: '',
-    birthdate: ''
+    // interests: '',
+    // profile_photo: null,
+    // bio: '',
+    // birthdate: ''
   });
 
   const [step, setStep] = useState(1);
@@ -61,7 +61,11 @@ const Register = () => {
       navigate("/login")
     } catch (error) {
       console.error(error);
-      alert('An error occurred during registration');
+      alert(
+        error.response?.data?.message ||
+        JSON.stringify(error.response?.data?.errors) ||
+        'An error occurred during registration'
+      );
     }
   };
 
@@ -75,7 +79,7 @@ const Register = () => {
     <div className="register-page">
       <div className="register-container">
         <h1 className="register-title">Register for Forum</h1>
-        
+
         <form onSubmit={handleSubmit} className="register-form">
           {step === 1 && (
             <>
@@ -124,8 +128,8 @@ const Register = () => {
           )}
 
           {step === 2 && (
-            <> 
-              <TextInput
+            <>
+              {/* <TextInput
                 icon={FaClipboardList}
                 name="interests"
                 value={formData.interests}
@@ -151,11 +155,11 @@ const Register = () => {
                 onChange={handleChange}
                 placeholder="Birthdate"
                 type="date"
-              />
-              <div className="button-container">
-                <button type="button" className="register-button" onClick={handlePrevStep}>Back</button>
-                <button type="submit" className="register-button">Register</button>
-              </div>
+              />*/
+                <div className="button-container">
+                  <button type="button" className="register-button" onClick={handlePrevStep}>Back</button>
+                  <button type="submit" className="register-button">Register</button>
+                </div>}
             </>
           )}
         </form>

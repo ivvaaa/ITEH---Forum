@@ -12,7 +12,7 @@ export default function Login({ setIsLoggedIn }) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (sessionStorage.getItem("auth_token") || localStorage.getItem("token")) {
+    if (sessionStorage.getItem("auth_token") || localStorage.getItem("access_token")) {
       setIsLoggedIn?.(true);
       nav("/", { replace: true });
     }
@@ -25,12 +25,12 @@ export default function Login({ setIsLoggedIn }) {
     setLoading(true);
     try {
       const { data } = await api.post("/api/login", { email, password });
-      if (!data?.token) throw new Error("Nema tokena.");
+      if (!data?.access_token) throw new Error("Nema tokena.");
 
       // čuvaj u OBA storage-a (da radi i axios i tvoj App)
-      localStorage.setItem("token", data.token);
+      localStorage.setItem("token", data.access_token);
       localStorage.setItem("user", JSON.stringify(data.user || null));
-      sessionStorage.setItem("auth_token", data.token);
+      sessionStorage.setItem("auth_token", data.access_token);
       sessionStorage.setItem("user", JSON.stringify(data.user || null));
       if (data.user?.role_id) sessionStorage.setItem("role_id", String(data.user.role_id));
 
@@ -50,17 +50,17 @@ export default function Login({ setIsLoggedIn }) {
       <form onSubmit={submit}>
         <label className="input-container">
           <span className="input-label">Email</span>
-          <input type="email" value={email} onChange={(e)=>setEmail(e.target.value)} className="input-field" />
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input-field" />
         </label>
         <label className="input-container">
           <span className="input-label">Lozinka</span>
-          <div style={{display:"flex", gap:8}}>
-            <input type={show ? "text" : "password"} value={password} onChange={(e)=>setPassword(e.target.value)} className="input-field" />
-            <button type="button" onClick={()=>setShow(s=>!s)} style={{padding:"6px 10px"}}>{show ? "Hide" : "Show"}</button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input type={show ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} className="input-field" />
+            <button type="button" onClick={() => setShow(s => !s)} style={{ padding: "6px 10px" }}>{show ? "Hide" : "Show"}</button>
           </div>
         </label>
-        {error && <div style={{color:"crimson"}}>{error}</div>}
-        <button type="submit" disabled={loading} style={{marginTop:8}}>
+        {error && <div style={{ color: "crimson" }}>{error}</div>}
+        <button type="submit" disabled={loading} style={{ marginTop: 8 }}>
           {loading ? "U toku…" : "Uloguj se"}
         </button>
       </form>

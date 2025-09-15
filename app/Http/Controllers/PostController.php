@@ -14,10 +14,30 @@ class PostController extends Controller
     /**
      * Display a listing of the posts.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $post = Post::all();
-        return PostResource::collection($post);
+        $query = Post::with(['user', 'car']);
+
+        if ($request->has('car_make')) {
+            $carMake = $request->input('car_make');
+            $query->whereHas('car', function ($q) use ($carMake) {
+                $q->where('make', 'like', "%$carMake%");
+            });
+        }
+
+        if ($request->has('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('content', 'like', "%$search%")
+                    ->orWhereHas('user', function ($qu) use ($search) {
+                        $qu->where('name', 'like', "%$search%")
+                            ->orWhere('email', 'like', "%$search%");
+                    });
+            });
+        }
+        $perPage = $request->input('per_page', 5);
+        return PostResource::collection($query->paginate($perPage));
+
     }
 
     /**

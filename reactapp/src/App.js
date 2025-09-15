@@ -10,8 +10,7 @@ import Navbar from './components/Navbar';
 // import Moderator from './pages/Moderator/Moderator';
 // import Admin from './pages/Admin/Admin';
 // import AdminStatistike from './pages/Admin/AdminStatistike';
-
-
+import PostDetails from './pages/PostDetails';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -28,10 +27,13 @@ function App() {
 
   return (
     <Router>
-      <Navbar isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} roleId={roleId} /> 
+      <Navbar isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} roleId={roleId} />
       <div className="App">
         <Routes>
           <Route path="/" element={<HomePage />} />
+
+          <Route path="/post/:id" element={<PostDetails />} />
+
           {isLoggedIn ? (
             <>
               {/* {roleId == 1 && (
