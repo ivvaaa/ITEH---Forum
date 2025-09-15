@@ -22,11 +22,16 @@ function App() {
   useEffect(() => {
     const token = sessionStorage.getItem('auth_token');
     const role_id = sessionStorage.getItem('role_id');
+
     if (token) {
       setIsLoggedIn(true);
-      setRoleId(parseInt(role_id));  // Pretvori u broj radi sigurnosti
+      setRoleId(role_id ? parseInt(role_id, 10) : null);
+    } else {
+      setIsLoggedIn(false);
+      setRoleId(null);
     }
-  }, []);
+  }, [isLoggedIn]);
+
 
   return (
     <Router>

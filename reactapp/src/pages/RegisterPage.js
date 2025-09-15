@@ -16,7 +16,7 @@ const Register = () => {
     email: '',
     password: '',
     password_confirmation: '',
-    role_id: '1',  // Setovanje role_id na 1
+    role_id: '2',  // Setovanje role_id na 2 - user
     // interests: '',
     // profile_photo: null,
     // bio: '',

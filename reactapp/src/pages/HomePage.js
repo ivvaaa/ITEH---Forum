@@ -14,16 +14,16 @@ const HomePage = () => {
 
   const fetchPosts = async (query = "", carMake = "", page = 1, perPage = POSTS_PER_PAGE) => {
     const token = sessionStorage.getItem("auth_token") || localStorage.getItem("access_token");
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
     const res = await axios.get("http://127.0.0.1:8000/api/posts", {
       params: { search: query, car_make: carMake, page, per_page: perPage },
-      headers: { Authorization: `Bearer ${token}` },
+      headers,
     });
 
     setPosts(res.data.data);
     setCurrentPage(res.data.meta?.current_page ?? 1);
     setLastPage(res.data.meta?.last_page ?? 1);
   };
-
 
   const handleReset = () => {
     setSearch("");
@@ -70,7 +70,6 @@ const HomePage = () => {
           Resetuj filtere
         </button>
       </form>
-
       <div className="posts-list">
         {posts.length === 0 && <p>Nema postova.</p>}
         {posts.map(post => (
@@ -89,7 +88,6 @@ const HomePage = () => {
         ))}
       </div>
 
-
       <div style={{ marginTop: 20 }}>
         {Array.from({ length: lastPage }, (_, i) => (
           <button
@@ -107,3 +105,4 @@ const HomePage = () => {
 };
 
 export default HomePage;
+

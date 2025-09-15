@@ -10,6 +10,8 @@ use App\Http\Controllers\PasswordResetController;
 // Public auth
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::apiResource('posts', PostController::class)->only(['index', 'show']);
+
 
 // Public read-only posts (adjust if you want protected)
 // Route::apiResource('posts', PostController::class)->only(['index','show']);
@@ -27,8 +29,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::apiResource('cars', CarController::class);
-    Route::apiResource('comments', CommentController::class);
-    Route::apiResource('posts', PostController::class);
+    Route::apiResource('comments', CommentController::class);
+    Route::apiResource('posts', PostController::class)->except(['index', 'show']);
 
 });
 
@@ -37,7 +39,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::get('/users', [UserController::class, 'index']);                   // list users
     Route::get('/users/search', [UserController::class, 'search']);           // search
     Route::put('/users/{id}/role', [UserController::class, 'updateRole']);    // update by id
-    //Route::apiResource('posts', PostController::class);
+    //Route::apiResource('posts', PostController::class)->only(['index', 'show']);
 
 });
 
