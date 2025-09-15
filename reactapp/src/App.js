@@ -4,6 +4,9 @@ import './App.css';
 import HomePage from './pages/HomePage';
 import Register from './pages/RegisterPage';
 import Login from './pages/LoginPage';
+import CreatePost from './pages/CreatePostPage';
+import AdminStats from './pages/AdminStats';
+import MyPostsPage from './pages/MyPostsPage';
 import Navbar from './components/Navbar';
 // import PostsList from './pages/Post/PostsList';
 // import PostDetails from './pages/Post/PostDetails';
@@ -36,24 +39,18 @@ function App() {
 
           {isLoggedIn ? (
             <>
-              {/* {roleId == 1 && (
+              {roleId == 1 && (
                 <>
-                  <Route path="/posts" element={<PostsList />} />
-                  <Route path="/post/:id" element={<PostDetails />} />
-                </>
-              )} */}
-              {/* {roleId == 2 && (
-                <>
-                  <Route path="/moderator" element={<Moderator />} />
+                  <Route path="/create" element={<CreatePost />} />
+                  <Route path="/statistika" element={<AdminStats />} />
                 </>
               )}
-              {roleId == 3 && (
+              {roleId == 2 && (
                 <>
-                  <Route path="/admin" element={<Admin />} />
-                  <Route path="/adminStatistike" element={<AdminStatistike />} />
+                  <Route path="/create" element={<CreatePost />} />
                 </>
-              )} */}
-            </>
+
+              )} </>
           ) : (
             <>
               <Route path="/register" element={<Register />} />

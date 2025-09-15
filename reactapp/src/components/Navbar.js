@@ -12,7 +12,7 @@ export default function Navbar({ isLoggedIn, setIsLoggedIn, roleId }) {
   const user = getUser();
 
   const logout = async () => {
-    try { await api.post("/api/logout"); } catch {}
+    try { await api.post("/api/logout"); } catch { }
     // počisti oba storage-a (pošto koristiš sessionStorage u App-u)
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -27,13 +27,11 @@ export default function Navbar({ isLoggedIn, setIsLoggedIn, roleId }) {
     "px-3 py-2" + (isActive ? " font-semibold underline" : "");
 
   return (
-    <header style={{borderBottom:"1px solid #eee"}}>
-      <div style={{maxWidth:1000, margin:"0 auto", padding:"10px 16px", display:"flex", alignItems:"center", justifyContent:"space-between"}}>
-        <Link to="/" style={{fontWeight:700, textDecoration:"none"}}>ITEH Forum</Link>
-        <nav style={{display:"flex", gap:8, alignItems:"center"}}>
+    <header style={{ borderBottom: "1px solid #eee" }}>
+      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Link to="/" style={{ fontWeight: 700, textDecoration: "none" }}>ITEH Forum</Link>
+        <nav style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <NavLink to="/" className={linkCls}>Home</NavLink>
-          {/* Dodaj i druge linkove po želji */}
-          {/* <NavLink to="/threads" className={linkCls}>Teme</NavLink> */}
 
           {!isLoggedIn ? (
             <>
@@ -42,10 +40,16 @@ export default function Navbar({ isLoggedIn, setIsLoggedIn, roleId }) {
             </>
           ) : (
             <>
-              {roleId === 3 && <NavLink to="/admin" className={linkCls}>Admin</NavLink>}
-              {roleId === 2 && <NavLink to="/moderator" className={linkCls}>Moderator</NavLink>}
-              <span style={{color:"#555"}}>{user?.name ? `Hi, ${user.name}` : ""}</span>
-              <button onClick={logout} style={{padding:"6px 10px", border:"1px solid #ddd", borderRadius:8, cursor:"pointer"}}>
+              {/* Kreiraj post za user i admin */}
+              {(roleId === 1 || roleId === 2) && (
+                <NavLink to="/create" className={linkCls}>Kreiraj post</NavLink>
+              )}
+              {/* Statistika samo za admina */}
+              {roleId === 1 && (
+                <NavLink to="/statistika" className={linkCls}>Statistika</NavLink>
+              )}
+              <span style={{ color: "#555" }}>{user?.name ? `Hi, ${user.name}` : ""}</span>
+              <button onClick={logout} style={{ padding: "6px 10px", border: "1px solid #ddd", borderRadius: 8, cursor: "pointer" }}>
                 Logout
               </button>
             </>
