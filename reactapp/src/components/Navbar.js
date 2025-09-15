@@ -42,7 +42,13 @@ export default function Navbar({ isLoggedIn, setIsLoggedIn, roleId }) {
             <>
               {/* Kreiraj post za user i admin */}
               {(roleId === 1 || roleId === 2) && (
-                <NavLink to="/create" className={linkCls}>Kreiraj post</NavLink>
+                <>
+
+                  <NavLink to="/create" className={linkCls}>Kreiraj post</NavLink>
+                  <NavLink to="/posts" className={linkCls}>Moji postovi</NavLink>
+                </>
+
+
               )}
               {/* Statistika samo za admina */}
               {roleId === 1 && (

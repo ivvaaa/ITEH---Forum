@@ -6,6 +6,7 @@ use App\Models\Post;
 use Illuminate\Http\Request;
 use App\Http\Resources\PostResource;
 use App\Models\Comment;
+use App\Models\Car;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 
@@ -16,7 +17,11 @@ class PostController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Post::with(['user', 'car']);
+        $query = Post::with(['user', 'car'])->latest();
+
+        if ($request->boolean('mine')) {
+            $query->where('user_id', Auth::id());
+        }
 
         if ($request->has('car_make')) {
             $carMake = $request->input('car_make');
@@ -40,14 +45,13 @@ class PostController extends Controller
 
     }
 
-    /**
-     * Store a newly created post in storage.
-     */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'content' => 'required|string',
-            'car_id' => 'required|exists:cars,id',
+            'car_make' => 'required|string|max:255',
+            'car_model' => 'required|string|max:255',
+            'car_year' => 'required|integer|between:1900,2099',
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Validate each file in the array
             'other' => 'nullable|string',
@@ -58,17 +62,24 @@ class PostController extends Controller
         }
 
         $imagePaths = [];
-        if ($request->has('images')) {
+        if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
                 $path = $image->store('images', 'public');  // This will store in storage/app/public/images
                 $imagePaths[] = 'storage/' . $path;  // Ensure the correct relative path is stored
             }
         }
 
+        $car = Car::create([
+            'make' => $request->car_make,
+            'model' => $request->car_model,
+            'year' => $request->car_year,
+            'user_id' => Auth::id(),
+        ]);
+
         $post = Post::create([
             'content' => $request->content,
             'user_id' => Auth::id(),
-            'car_id' => $request->car_id,
+            'car_id' => $car->id,
             'images' => json_encode($imagePaths), //cuva putanju koa json string
             'other' => $request->other
         ]);
@@ -92,8 +103,11 @@ class PostController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'content' => 'sometimes|required|string',
-            'car_id' => 'sometimes|required|exists:cars,id',
-            'images' => 'nullable|string',
+            'car_make' => 'sometimes|required|string|max:255',
+            'car_model' => 'sometimes|required|string|max:255',
+            'car_year' => 'sometimes|required|integer|between:1900,2099',
+            'images' => 'nullable|array',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'other' => 'nullable|string'
         ]);
 
@@ -101,16 +115,45 @@ class PostController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        $post = Post::findOrFail($id);
+        $post = Post::with('car')->findOrFail($id);
+
+        if ($post->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $imagePaths = $post->images ?? [];
+
+        if ($request->hasFile('images')) {
+            $imagePaths = [];
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('images', 'public');
+                $imagePaths[] = 'storage/' . $path;
+            }
+        }
 
         $post->update([
-            'content' => $request->content ?? $post->content,
-            'car_id' => $request->car_id ?? $post->car_id,
-            'images' => $request->images,
-            'other' => $request->other
+            'content' => $request->input('content', $post->content),
+            'images' => json_encode($imagePaths),
+            'other' => $request->input('other', $post->other),
         ]);
 
-        return new PostResource($post);
+        if ($post->car) {
+            $post->car->update([
+                'make' => $request->input('car_make', $post->car->make),
+                'model' => $request->input('car_model', $post->car->model),
+                'year' => $request->input('car_year', $post->car->year),
+            ]);
+        } elseif ($request->filled('car_make') && $request->filled('car_model') && $request->filled('car_year')) {
+            $car = Car::create([
+                'make' => $request->car_make,
+                'model' => $request->car_model,
+                'year' => $request->car_year,
+                'user_id' => Auth::id(),
+            ]);
+            $post->update(['car_id' => $car->id]);
+        }
+
+        return new PostResource($post->fresh(['user', 'car']));
     }
 
 

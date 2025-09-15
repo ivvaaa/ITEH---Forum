@@ -1,29 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 export default function CreatePost() {
     const [content, setContent] = useState("");
-    const [carId, setCarId] = useState("");
+    const [carMake, setCarMake] = useState("");
+    const [carModel, setCarModel] = useState("");
+    const [carYear, setCarYear] = useState("");
     const [images, setImages] = useState([]);
     const [other, setOther] = useState("");
-    const [cars, setCars] = useState([]);
     const [error, setError] = useState("");
     const navigate = useNavigate();
-
-    // Učitaj automobile iz baze
-    useEffect(() => {
-        const token = sessionStorage.getItem("auth_token") || localStorage.getItem("access_token");
-        axios
-            .get("http://localhost:8000/api/cars", {
-                headers: { Authorization: `Bearer ${token}` },
-            })
-            .then(res => setCars(res.data.data || res.data))
-            .catch(err => {
-                console.error(err);
-                setCars([]);
-            });
-    }, []);
 
     const handleImageChange = (e) => {
         setImages([...e.target.files]);
@@ -35,7 +22,9 @@ export default function CreatePost() {
         const token = sessionStorage.getItem("auth_token") || localStorage.getItem("access_token");
         const formData = new FormData();
         formData.append("content", content);
-        formData.append("car_id", carId);
+        formData.append("car_make", carMake);
+        formData.append("car_model", carModel);
+        formData.append("car_year", carYear);
         formData.append("other", other);
         for (let i = 0; i < images.length; i++) {
             formData.append("images[]", images[i]);
@@ -48,9 +37,9 @@ export default function CreatePost() {
                     Authorization: `Bearer ${token}`,
                 },
             });
-            navigate("/"); // Vrati korisnika na početnu nakon uspešnog kreiranja
+            navigate("/"); // Vrati korisnika na pocetnu nakon uspe�nog kreiranja
         } catch (err) {
-            setError("Greška pri kreiranju posta.");
+            setError("Gre�ka pri kreiranju posta.");
         }
     };
 
@@ -63,13 +52,23 @@ export default function CreatePost() {
                     <textarea value={content} onChange={e => setContent(e.target.value)} required />
                 </div>
                 <div>
-                    <label>Automobil:</label>
-                    <select value={carId} onChange={e => setCarId(e.target.value)} required>
-                        <option value="">Izaberi automobil</option>
-                        {cars.map(car => (
-                            <option key={car.id} value={car.id}>{car.make} {car.model} ({car.year})</option>
-                        ))}
-                    </select>
+                    <label>Proizvođač automobila: </label>
+                    <input type="text" value={carMake} onChange={e => setCarMake(e.target.value)} required />
+                </div>
+                <div>
+                    <label>Model automobila: </label>
+                    <input type="text" value={carModel} onChange={e => setCarModel(e.target.value)} required />
+                </div>
+                <div>
+                    <label>Godiste automobila: </label>
+                    <input
+                        type="number"
+                        min="1950"
+                        max="2025"
+                        value={carYear}
+                        onChange={e => setCarYear(e.target.value)}
+                        required
+                    />
                 </div>
                 <div>
                     <label>Slike:</label>
@@ -80,7 +79,7 @@ export default function CreatePost() {
                     <input type="text" value={other} onChange={e => setOther(e.target.value)} />
                 </div>
                 {error && <div style={{ color: "red" }}>{error}</div>}
-                <button type="submit">Sačuvaj</button>
+                <button type="submit">Sacuvaj</button>
             </form>
         </div>
     );

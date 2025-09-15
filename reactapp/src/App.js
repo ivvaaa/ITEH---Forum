@@ -41,13 +41,13 @@ function App() {
             <>
               {roleId == 1 && (
                 <>
-                  <Route path="/create" element={<CreatePost />} />
                   <Route path="/statistika" element={<AdminStats />} />
                 </>
               )}
-              {roleId == 2 && (
+              {(roleId == 1 || roleId == 2) && (
                 <>
                   <Route path="/create" element={<CreatePost />} />
+                  <Route path="/posts" element={<MyPostsPage />} />
                 </>
 
               )} </>
