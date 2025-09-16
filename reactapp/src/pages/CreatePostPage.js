@@ -39,7 +39,7 @@ export default function CreatePost() {
             });
             navigate("/"); // Vrati korisnika na pocetnu nakon uspe�nog kreiranja
         } catch (err) {
-            setError("Gre�ka pri kreiranju posta.");
+            setError("Greska pri kreiranju posta.");
         }
     };
 
