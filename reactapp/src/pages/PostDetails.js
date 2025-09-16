@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -10,9 +10,10 @@ const PostDetails = () => {
 
     useEffect(() => {
         const token = sessionStorage.getItem("auth_token") || localStorage.getItem("access_token");
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
         axios
             .get(`http://127.0.0.1:8000/api/posts/${id}`, {
-                headers: { Authorization: `Bearer ${token}` },
+                headers,
             })
             .then((res) => {
                 setPost(res.data.data || res.data);
@@ -24,7 +25,26 @@ const PostDetails = () => {
             });
     }, [id, navigate]);
 
-    if (!post) return <div>Učitavanje...</div>;
+    if (!post) return <div>Ucitavanje...</div>;
+
+    const normalizeImages = (images) => {
+        if (!images) return [];
+        if (Array.isArray(images)) return images;
+        if (typeof images === "string") {
+            try {
+                const parsed = JSON.parse(images);
+                if (Array.isArray(parsed)) {
+                    return parsed;
+                }
+            } catch (error) {
+                // ignore parsing errors and handle fallback below
+            }
+            return images ? [images] : [];
+        }
+        return [];
+    };
+
+    const images = normalizeImages(post.images);
 
     return (
         <div style={{ maxWidth: 700, margin: "30px auto" }}>
@@ -34,9 +54,9 @@ const PostDetails = () => {
                 <b>Auto:</b> {post.car?.make} {post.car?.model} ({post.car?.year})
             </p>
             <p>{post.content}</p>
-            {post.images && post.images.length > 0 && (
+            {images.length > 0 && (
                 <div>
-                    {post.images.map((img, idx) => (
+                    {images.map((img, idx) => (
                         <img key={idx} src={img} alt="slika auta" style={{ width: 200, margin: 5 }} />
                     ))}
                 </div>

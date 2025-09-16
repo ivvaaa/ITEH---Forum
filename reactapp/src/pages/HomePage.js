@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import useAutoNews from "../api/hooks/useAutoNews";
+import "./homePage.css";
 
 const HomePage = () => {
   const [posts, setPosts] = useState([]);
@@ -19,14 +20,13 @@ const HomePage = () => {
     return new Date(parsed).toLocaleString("sr-RS", { dateStyle: "medium", timeStyle: "short" });
   };
 
-
   const POSTS_PER_PAGE = 5;
 
-  const fetchPosts = async (query = "", carMake = "", page = 1, perPage = POSTS_PER_PAGE) => {
+  const fetchPosts = async (query = "", carMakeValue = "", page = 1, perPage = POSTS_PER_PAGE) => {
     const token = sessionStorage.getItem("auth_token") || localStorage.getItem("access_token");
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
     const res = await axios.get("http://127.0.0.1:8000/api/posts", {
-      params: { search: query, car_make: carMake, page, per_page: perPage },
+      params: { search: query, car_make: carMakeValue, page, per_page: perPage },
       headers,
     });
 
@@ -58,103 +58,188 @@ const HomePage = () => {
     navigate(`/post/${postId}`);
   };
 
+  const handleJoin = () => {
+    navigate("/register");
+  };
+
+  const handleLogin = () => {
+    navigate("/login");
+  };
+
+  const handleCreatePost = () => {
+    navigate("/create");
+  };
+
+  const scrollToSection = (id) => {
+    const section = document.getElementById(id);
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  const scrollToSearch = () => scrollToSection("search-panel");
+  const scrollToPosts = () => scrollToSection("posts-feed");
+  const scrollToNews = () => scrollToSection("news-section");
+
   return (
-    <div className="homepage-container">
-      <form onSubmit={handleSearch} style={{ marginBottom: 20 }}>
-        <input
-          type="text"
-          placeholder="Pretraži postove, korisnike..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{ width: 200, marginRight: 10 }}
-        />
-        <input
-          type="text"
-          placeholder="Marka automobila"
-          value={carMake}
-          onChange={e => setCarMake(e.target.value)}
-          style={{ width: 150, marginRight: 10 }}
-        />
-        <button type="submit">Pretraži</button>
-        <button type="button" onClick={handleReset} style={{ marginLeft: 10 }}>
-          Resetuj filtere
-        </button>
-      </form>
-      <div className="posts-list">
-        {posts.length === 0 && <p>Nema postova.</p>}
-        {posts.map(post => (
-          <div key={post.id} className="post-card">
-            <h3>{post.user?.name || "Nepoznat korisnik"}</h3>
-            <p><b>Auto:</b> {post.car?.make} {post.car?.model} ({post.car?.year})</p>
-            <p>
-              {post.content?.slice(0, 60)}{post.content && post.content.length > 60 ? "..." : ""}
-            </p>
-            {post.images && post.images.length > 0 && (
-              <img src={post.images[0]} alt="slika auta" style={{ width: 100 }} />
-            )}
-            <br />
-            <button onClick={() => handleViewMore(post.id)}>Više</button>
+    <div className="homepage">
+      <section className="hero-section">
+        <div className="hero-overlay" />
+        <header className="hero-top">
+          <span className="hero-brand">ITEH FORUM</span>
+          <nav className="hero-nav">
+            <button type="button" onClick={scrollToSearch}>Pretraga</button>
+            <button type="button" onClick={scrollToPosts}>Postovi</button>
+            <button type="button" onClick={scrollToNews}>Vesti</button>
+          </nav>
+          <div className="hero-auth">
+            <button type="button" className="btn ghost small" onClick={handleLogin}>Prijava</button>
+            <button type="button" className="btn primary small" onClick={handleJoin}>Registracija</button>
           </div>
-        ))}
-      </div>
+        </header>
+        <div className="hero-main">
+          <div className="hero-text">
+            <h1 className="hero-title">
+              <span>UNLEASH</span>
+              <span className="stroke">YOUR</span>
+              <span>NEED FOR</span>
+              <span className="stroke">SPEED</span>
+            </h1>
+            <p className="hero-description">
+              Tvoja pit-stop stanica za trkačke priče, tuning savete i sve što pokreće auto entuzijaste. Priključi se
+              zajednici koja živi za oktane.
+            </p>
+            <div className="hero-card">
+              <p>
+                Pronađi društvo za sledeći track day, podeli svoj build ili pokupi trikove kako da izvučeš još koju
+                desetinku sa starta. Forum je tvoja garaža – uvek otvorena.
+              </p>
+              <div className="card-actions">
+                <button type="button" className="btn primary" onClick={scrollToPosts}>Pogledaj postove</button>
+                <button type="button" className="btn ghost" onClick={handleCreatePost}>Napravi objavu</button>
+              </div>
+            </div>
+          </div>
+          <div className="hero-visual" aria-hidden="true">
+            <img
+              src="https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=1200&q=80"
+              alt="Sportski automobil"
+              loading="lazy"
+            />
+          </div>
+        </div>
+      </section>
 
-      <div style={{ marginTop: 20 }}>
-        {Array.from({ length: lastPage }, (_, i) => (
-          <button
-            key={i + 1}
-            onClick={() => handlePageChange(i + 1)}
-            disabled={currentPage === i + 1}
-            style={{ margin: 2 }}
-          >
-            {i + 1}
+      <section className="search-panel" id="search-panel">
+        <div className="panel-header">
+          <div>
+            <h2>Pronađi savršen automobil i ekipu</h2>
+            <p>Filtriraj objave po marki ili potraži omiljenog autora.</p>
+          </div>
+          <button type="button" className="btn link" onClick={handleReset}>
+            Resetuj filtere
           </button>
-        ))}
-      </div>
+        </div>
+        <form className="search-form" onSubmit={handleSearch}>
+          <label className="field">
+            <span>Pretraži postove, korisnike...</span>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Unesi ključnu reč"
+            />
+          </label>
+          <label className="field">
+            <span>Marka automobila</span>
+            <input
+              type="text"
+              value={carMake}
+              onChange={(e) => setCarMake(e.target.value)}
+              placeholder="npr. BMW"
+            />
+          </label>
+          <button type="submit" className="btn primary">
+            Pretraži
+          </button>
+        </form>
+      </section>
 
-      <section style={{ marginTop: 40 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <h2 style={{ margin: 0 }}>Vesti iz auto sveta</h2>
+      <section className="posts-section" id="posts-feed">
+        <header className="section-header">
+          <h3>Najnovije objave zajednice</h3>
+          <p>Pridruži se razgovoru i podeli svoje iskustvo.</p>
+        </header>
+        <div className="posts-grid">
+          {posts.length === 0 && <p className="empty-state">Nema postova.</p>}
+          {posts.map((post) => (
+            <article key={post.id} className="post-card">
+              <div className="post-meta">
+                <span className="post-author">{post.user?.name || "Nepoznat korisnik"}</span>
+                <span className="post-car">
+                  {post.car?.make} {post.car?.model} ({post.car?.year})
+                </span>
+              </div>
+              <p className="post-content">
+                {post.content?.slice(0, 120)}
+                {post.content && post.content.length > 120 ? "..." : ""}
+              </p>
+              {post.images && post.images.length > 0 && (
+                <div className="post-media">
+                  <img src={post.images[0]} alt="Slika automobila" loading="lazy" />
+                </div>
+              )}
+              <button type="button" className="btn ghost" onClick={() => handleViewMore(post.id)}>
+                Više detalja
+              </button>
+            </article>
+          ))}
+        </div>
+        {lastPage > 1 && (
+          <div className="pagination">
+            {Array.from({ length: lastPage }, (_, i) => (
+              <button
+                key={i + 1}
+                type="button"
+                onClick={() => handlePageChange(i + 1)}
+                className={`page-btn ${currentPage === i + 1 ? "active" : ""}`}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="news-section" id="news-section">
+        <div className="section-header">
+          <h3>Vesti iz auto sveta</h3>
           <button
+            type="button"
             onClick={refreshNews}
             disabled={newsLoading}
-            style={{
-              padding: "6px 12px",
-              borderRadius: 6,
-              border: "1px solid #2563eb",
-              background: newsLoading ? "#bfdbfe" : "#2563eb",
-              color: "#fff",
-              cursor: newsLoading ? "not-allowed" : "pointer",
-            }}
+            className="btn primary"
           >
-            {newsLoading ? "Ucitavanje..." : "Osvezi"}
+            {newsLoading ? "Učitavanje..." : "Osveži"}
           </button>
         </div>
         {newsLoading ? (
-          <p>Ucitavanje vesti...</p>
+          <p className="info">Učitavanje vesti...</p>
         ) : newsError ? (
-          <p style={{ color: "#b91c1c" }}>{newsError}</p>
+          <p className="error">{newsError}</p>
         ) : news.length === 0 ? (
-          <p>Trenutno nema novih vesti.</p>
+          <p className="info">Trenutno nema novih vesti.</p>
         ) : (
-          <div
-            style={{
-              display: "grid",
-              gap: 16,
-              gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
-            }}
-          >
+          <div className="news-grid">
             {news.map((article) => (
-              <article
-                key={article.id}
-                style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 16, background: "#fff" }}
-              >
-                <h3 style={{ fontSize: "1.05rem", marginBottom: 8 }}>{article.title}</h3>
-                <p style={{ fontSize: "0.9rem", color: "#4b5563", minHeight: 60 }}>{article.summary}</p>
-                <div style={{ fontSize: "0.8rem", color: "#6b7280", marginBottom: 8 }}>
+              <article key={article.id} className="news-card">
+                <h4>{article.title}</h4>
+                <p>{article.summary}</p>
+                <div className="news-meta">
                   <span>{article.source}</span>
-                  <span style={{ marginLeft: 8 }}>- {formatPublished(article.published_at)}</span>
+                  <span>{formatPublished(article.published_at)}</span>
                 </div>
-                <a href={article.url} target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb", fontWeight: 600 }}>
+                <a href={article.url} target="_blank" rel="noopener noreferrer">
                   Otvori vest
                 </a>
               </article>
@@ -162,11 +247,8 @@ const HomePage = () => {
           </div>
         )}
       </section>
-
     </div>
   );
 };
 
 export default HomePage;
-
-
