@@ -1,19 +1,32 @@
 import React from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import "./navbar.css";
 
 function getUser() {
-  try { return JSON.parse(localStorage.getItem("user")) || JSON.parse(sessionStorage.getItem("user")) || null; }
-  catch { return null; }
+  try {
+    return (
+      JSON.parse(localStorage.getItem("user")) ||
+      JSON.parse(sessionStorage.getItem("user")) ||
+      null
+    );
+  } catch {
+    return null;
+  }
 }
 
 export default function Navbar({ isLoggedIn, setIsLoggedIn, roleId }) {
   const nav = useNavigate();
   const user = getUser();
 
+
+
   const logout = async () => {
-    try { await api.post("/api/logout"); } catch { }
-    // počisti oba storage-a (pošto koristiš sessionStorage u App-u)
+    try {
+      await api.post("/api/logout");
+    } catch {
+      // ignore logout errors so UI can proceed
+    }
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     sessionStorage.removeItem("auth_token");
@@ -23,42 +36,62 @@ export default function Navbar({ isLoggedIn, setIsLoggedIn, roleId }) {
     nav("/");
   };
 
-  const linkCls = ({ isActive }) =>
-    "px-3 py-2" + (isActive ? " font-semibold underline" : "");
+  const navLinkClass = ({ isActive }) => `nav-link${isActive ? " active" : ""}`;
+  const navGhostButton = ({ isActive }) => `nav-btn ghost${isActive ? " active" : ""}`;
 
   return (
-    <header style={{ borderBottom: "1px solid #eee" }}>
-      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Link to="/" style={{ fontWeight: 700, textDecoration: "none" }}>ITEH Forum</Link>
-        <nav style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <NavLink to="/" className={linkCls}>Home</NavLink>
-
-          {!isLoggedIn ? (
-            <>
-              <NavLink to="/login" className={linkCls}>Login</NavLink>
-              <NavLink to="/register" className={linkCls}>Register</NavLink>
-            </>
-          ) : (
+    <header className="app-navbar">
+      <div className="navbar-inner">
+        <Link to="/" className="brand">
+          ITEH<span>FORUM</span>
+        </Link>
+        <nav className="nav-links">
+          <NavLink to="/" className={navLinkClass}>
+            Pocetna
+          </NavLink>
+        </nav>
+        <div className="nav-actions">
+          {isLoggedIn ? (
             <>
               {(roleId === 1 || roleId === 2) && (
                 <>
-
-                  <NavLink to="/create" className={linkCls}>Kreiraj post</NavLink>
-                  <NavLink to="/posts" className={linkCls}>Moji postovi</NavLink>
+                  <NavLink to="/create" className={navGhostButton}>
+                    Kreiraj post
+                  </NavLink>
+                  <NavLink to="/posts" className={navGhostButton}>
+                    Moji postovi
+                  </NavLink>
                 </>
-
               )}
               {roleId === 1 && (
-                <NavLink to="/statistika" className={linkCls}>Statistika</NavLink>
+                <NavLink to="/statistika" className={navGhostButton}>
+                  Statistika
+                </NavLink>
               )}
-              <span style={{ color: "#555" }}>{user?.name ? `Hi, ${user.name}` : ""}</span>
-              <button onClick={logout} style={{ padding: "6px 10px", border: "1px solid #ddd", borderRadius: 8, cursor: "pointer" }}>
-                Logout
+              <span className="nav-user">
+                {user?.name ? `Zdravo, ${user.name}` : ""}
+              </span>
+              <button type="button" className="nav-btn outline" onClick={logout}>
+                Odjava
               </button>
             </>
+          ) : (
+            <>
+              <NavLink to="/login" className={navGhostButton}>
+                Prijava
+              </NavLink>
+              <NavLink
+                to="/register"
+                className={({ isActive }) => `nav-btn primary${isActive ? " active" : ""}`}
+              >
+                Registracija
+              </NavLink>
+            </>
           )}
-        </nav>
+        </div>
       </div>
     </header>
   );
 }
+
+

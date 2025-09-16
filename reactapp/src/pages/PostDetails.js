@@ -12,9 +12,7 @@ const PostDetails = () => {
         const token = sessionStorage.getItem("auth_token") || localStorage.getItem("access_token");
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         axios
-            .get(`http://127.0.0.1:8000/api/posts/${id}`, {
-                headers,
-            })
+            .get(`http://127.0.0.1:8000/api/posts/${id}`, { headers })
             .then((res) => {
                 setPost(res.data.data || res.data);
                 setComments(res.data.data?.comments || res.data.comments || []);
@@ -25,7 +23,7 @@ const PostDetails = () => {
             });
     }, [id, navigate]);
 
-    if (!post) return <div>Ucitavanje...</div>;
+    if (!post) return <div className="page-shell"><div className="page-card narrow">Učitavanje...</div></div>;
 
     const normalizeImages = (images) => {
         if (!images) return [];
@@ -36,9 +34,7 @@ const PostDetails = () => {
                 if (Array.isArray(parsed)) {
                     return parsed;
                 }
-            } catch (error) {
-                // ignore parsing errors and handle fallback below
-            }
+            } catch (error) { }
             return images ? [images] : [];
         }
         return [];
@@ -47,31 +43,65 @@ const PostDetails = () => {
     const images = normalizeImages(post.images);
 
     return (
-        <div style={{ maxWidth: 700, margin: "30px auto" }}>
-            <button onClick={() => navigate(-1)} style={{ marginBottom: 20 }}>Nazad</button>
-            <h2>{post.user?.name || "Nepoznat korisnik"}</h2>
-            <p>
-                <b>Auto:</b> {post.car?.make} {post.car?.model} ({post.car?.year})
-            </p>
-            <p>{post.content}</p>
-            {images.length > 0 && (
-                <div>
-                    {images.map((img, idx) => (
-                        <img key={idx} src={img} alt="slika auta" style={{ width: 200, margin: 5 }} />
+        <div className="page-shell">
+            <div className="page-card narrow">
+                <button
+                    type="button"
+                    className="btn ghost"
+                    style={{ marginBottom: 18, width: "fit-content" }}
+                    onClick={() => navigate(-1)}
+                >
+                    ← Nazad
+                </button>
+                <div className="page-header">
+                    <h1>
+                        {post.user?.name || "Nepoznat korisnik"}
+                    </h1>
+                    <p>
+                        <b>Auto:</b> {post.car?.make} {post.car?.model} ({post.car?.year})
+                    </p>
+                </div>
+                <div className="my-post-content" style={{ marginBottom: 18 }}>
+                    {post.content}
+                </div>
+                {images.length > 0 && (
+                    <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 18 }}>
+                        {images.map((img, idx) => (
+                            <img
+                                key={idx}
+                                src={img}
+                                alt="slika auta"
+                                style={{
+                                    width: 180,
+                                    borderRadius: 14,
+                                    border: "1px solid rgba(120,124,133,0.18)",
+                                    background: "#18181b",
+                                    objectFit: "cover"
+                                }}
+                            />
+                        ))}
+                    </div>
+                )}
+                <div className="meta-line" style={{ marginBottom: 18 }}>
+                    {post.created_at}
+                </div>
+                <hr style={{ border: "none", borderTop: "1px solid var(--panel-border)", margin: "18px 0" }} />
+                <h4>Komentari</h4>
+                {comments.length === 0 && (
+                    <div className="empty-state-box">Nema komentara.</div>
+                )}
+                <div className="posts-collection">
+                    {comments.map((c) => (
+                        <div key={c.id} className="my-post-card" style={{ padding: 16, borderRadius: 14 }}>
+                            <div className="my-post-header" style={{ marginBottom: 6 }}>
+                                <b>{c.user?.name || "Anonimni korisnik"}</b>
+                                <span className="meta-line">{c.created_at}</span>
+                            </div>
+                            <div className="my-post-content">{c.content}</div>
+                        </div>
                     ))}
                 </div>
-            )}
-            <small>{post.created_at}</small>
-            <hr />
-            <h4>Komentari:</h4>
-            {comments.length === 0 && <p>Nema komentara.</p>}
-            {comments.map((c) => (
-                <div key={c.id} style={{ borderBottom: "1px solid #ccc", marginBottom: 10 }}>
-                    <b>{c.user?.name || "Anonimni korisnik"}:</b>
-                    <p>{c.content}</p>
-                    <small>{c.created_at}</small>
-                </div>
-            ))}
+            </div>
         </div>
     );
 };

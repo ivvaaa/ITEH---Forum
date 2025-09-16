@@ -58,14 +58,6 @@ const HomePage = () => {
     navigate(`/post/${postId}`);
   };
 
-  const handleJoin = () => {
-    navigate("/register");
-  };
-
-  const handleLogin = () => {
-    navigate("/login");
-  };
-
   const handleCreatePost = () => {
     navigate("/create");
   };
@@ -85,18 +77,7 @@ const HomePage = () => {
     <div className="homepage">
       <section className="hero-section">
         <div className="hero-overlay" />
-        <header className="hero-top">
-          <span className="hero-brand">ITEH FORUM</span>
-          <nav className="hero-nav">
-            <button type="button" onClick={scrollToSearch}>Pretraga</button>
-            <button type="button" onClick={scrollToPosts}>Postovi</button>
-            <button type="button" onClick={scrollToNews}>Vesti</button>
-          </nav>
-          <div className="hero-auth">
-            <button type="button" className="btn ghost small" onClick={handleLogin}>Prijava</button>
-            <button type="button" className="btn primary small" onClick={handleJoin}>Registracija</button>
-          </div>
-        </header>
+
         <div className="hero-main">
           <div className="hero-text">
             <h1 className="hero-title">
@@ -109,16 +90,15 @@ const HomePage = () => {
               Tvoja pit-stop stanica za trkačke priče, tuning savete i sve što pokreće auto entuzijaste. Priključi se
               zajednici koja živi za oktane.
             </p>
-            <div className="hero-card">
-              <p>
-                Pronađi društvo za sledeći track day, podeli svoj build ili pokupi trikove kako da izvučeš još koju
-                desetinku sa starta. Forum je tvoja garaža – uvek otvorena.
-              </p>
-              <div className="card-actions">
-                <button type="button" className="btn primary" onClick={scrollToPosts}>Pogledaj postove</button>
-                <button type="button" className="btn ghost" onClick={handleCreatePost}>Napravi objavu</button>
-              </div>
-            </div>
+            {/* <div className="hero-actions">
+              <button type="button" className="btn primary" onClick={scrollToPosts}>
+                Pogledaj postove
+              </button>
+              <button type="button" className="btn ghost" onClick={handleCreatePost}>
+                Kreiraj objavu
+              </button>
+            </div> */}
+
           </div>
           <div className="hero-visual" aria-hidden="true">
             <img

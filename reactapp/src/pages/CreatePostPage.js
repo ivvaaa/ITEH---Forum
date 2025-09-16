@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+﻿import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-export default function CreatePost() {
+
+export default function CreatePostPage() {
     const [content, setContent] = useState("");
     const [carMake, setCarMake] = useState("");
     const [carModel, setCarModel] = useState("");
@@ -37,50 +38,83 @@ export default function CreatePost() {
                     Authorization: `Bearer ${token}`,
                 },
             });
-            navigate("/"); // Vrati korisnika na pocetnu nakon uspe�nog kreiranja
+            navigate("/"); // Vrati korisnika na početnu nakon uspešnog kreiranja
         } catch (err) {
-            setError("Greska pri kreiranju posta.");
+            setError("Greška pri kreiranju posta.");
         }
     };
 
     return (
-        <div style={{ maxWidth: 500, margin: "30px auto" }}>
-            <h2>Kreiraj novi post</h2>
-            <form onSubmit={handleSubmit}>
-                <div>
-                    <label>Opis:</label>
-                    <textarea value={content} onChange={e => setContent(e.target.value)} required />
+        <div className="page-shell">
+            <div className="page-card narrow">
+                <div className="page-header">
+                    <h1>Kreiraj novi post</h1>
+                    <p>Popuni formu i podeli svoje iskustvo sa zajednicom.</p>
                 </div>
-                <div>
-                    <label>Proizvođač automobila: </label>
-                    <input type="text" value={carMake} onChange={e => setCarMake(e.target.value)} required />
-                </div>
-                <div>
-                    <label>Model automobila: </label>
-                    <input type="text" value={carModel} onChange={e => setCarModel(e.target.value)} required />
-                </div>
-                <div>
-                    <label>Godiste automobila: </label>
-                    <input
-                        type="number"
-                        min="1950"
-                        max="2025"
-                        value={carYear}
-                        onChange={e => setCarYear(e.target.value)}
-                        required
-                    />
-                </div>
-                <div>
-                    <label>Slike:</label>
-                    <input type="file" multiple accept="image/*" onChange={handleImageChange} />
-                </div>
-                <div>
-                    <label>Dodatno:</label>
-                    <input type="text" value={other} onChange={e => setOther(e.target.value)} />
-                </div>
-                {error && <div style={{ color: "red" }}>{error}</div>}
-                <button type="submit">Sacuvaj</button>
-            </form>
+                <form className="form-grid" onSubmit={handleSubmit}>
+                    <div className="form-field">
+                        <span>Opis posta</span>
+                        <textarea
+                            value={content}
+                            onChange={e => setContent(e.target.value)}
+                            required
+                            placeholder="Napiši nešto o svom automobilu, iskustvu ili događaju..."
+                        />
+                    </div>
+                    <div className="field-row">
+                        <div className="form-field">
+                            <span>Marka</span>
+                            <input
+                                type="text"
+                                value={carMake}
+                                onChange={e => setCarMake(e.target.value)}
+                                required
+                                placeholder="npr. BMW"
+                            />
+                        </div>
+                        <div className="form-field">
+                            <span>Model</span>
+                            <input
+                                type="text"
+                                value={carModel}
+                                onChange={e => setCarModel(e.target.value)}
+                                required
+                                placeholder="npr. 320d"
+                            />
+                        </div>
+                        <div className="form-field small">
+                            <span>Godina</span>
+                            <input
+                                type="number"
+                                value={carYear}
+                                onChange={e => setCarYear(e.target.value)}
+                                required
+                                min={1900}
+                                max={2099}
+                                placeholder="npr. 2012"
+                            />
+                        </div>
+                    </div>
+                    <div className="form-field">
+                        <span>Slike (opciono)</span>
+                        <input type="file" multiple accept="image/*" onChange={handleImageChange} />
+                    </div>
+                    <div className="form-field">
+                        <span>Dodatne informacije (opciono)</span>
+                        <input
+                            type="text"
+                            value={other}
+                            onChange={e => setOther(e.target.value)}
+                            placeholder="Npr. tuning, posebne modifikacije..."
+                        />
+                    </div>
+                    {error && <div className="alert">{error}</div>}
+                    <div className="form-actions">
+                        <button type="submit" className="btn primary">Sačuvaj</button>
+                        <button type="button" className="btn ghost" onClick={() => navigate("/")}>Otkaži</button>
+                    </div>
+                </form>
+            </div>
         </div>
     );
 }
