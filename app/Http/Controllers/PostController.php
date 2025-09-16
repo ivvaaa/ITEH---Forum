@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\PostResource;
+use App\Models\Car;
+use App\Models\Comment;
 use App\Models\Post;
 use Illuminate\Http\Request;
-use App\Http\Resources\PostResource;
-use App\Models\Comment;
-use App\Models\Car;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class PostController extends Controller
 {
@@ -40,9 +40,10 @@ class PostController extends Controller
                     });
             });
         }
-        $perPage = $request->input('per_page', 5);
-        return PostResource::collection($query->paginate($perPage));
 
+        $perPage = $request->input('per_page', 5);
+
+        return PostResource::collection($query->paginate($perPage));
     }
 
     public function store(Request $request)
@@ -53,7 +54,7 @@ class PostController extends Controller
             'car_model' => 'required|string|max:255',
             'car_year' => 'required|integer|between:1900,2099',
             'images' => 'nullable|array',
-            'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Validate each file in the array
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'other' => 'nullable|string',
         ]);
 
@@ -62,10 +63,11 @@ class PostController extends Controller
         }
 
         $imagePaths = [];
+
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
-                $path = $image->store('images', 'public');  // This will store in storage/app/public/images
-                $imagePaths[] = 'storage/' . $path;  // Ensure the correct relative path is stored
+                $path = $image->store('images', 'public');
+                $imagePaths[] = 'storage/' . $path;
             }
         }
 
@@ -80,8 +82,8 @@ class PostController extends Controller
             'content' => $request->content,
             'user_id' => Auth::id(),
             'car_id' => $car->id,
-            'images' => json_encode($imagePaths), //cuva putanju koa json string
-            'other' => $request->other
+            'images' => json_encode($imagePaths),
+            'other' => $request->other,
         ]);
 
         return new PostResource($post);
@@ -92,7 +94,15 @@ class PostController extends Controller
      */
     public function show($id)
     {
-        $post = Post::findOrFail($id);
+        $post = Post::with([
+            'user',
+            'car',
+            'comments' => function ($query) {
+                $query->orderBy('created_at');
+            },
+            'comments.user',
+        ])->findOrFail($id);
+
         return new PostResource($post);
     }
 
@@ -108,7 +118,7 @@ class PostController extends Controller
             'car_year' => 'sometimes|required|integer|between:1900,2099',
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'other' => 'nullable|string'
+            'other' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -125,6 +135,7 @@ class PostController extends Controller
 
         if ($request->hasFile('images')) {
             $imagePaths = [];
+
             foreach ($request->file('images') as $image) {
                 $path = $image->store('images', 'public');
                 $imagePaths[] = 'storage/' . $path;
@@ -156,16 +167,14 @@ class PostController extends Controller
         return new PostResource($post->fresh(['user', 'car']));
     }
 
-
-
     public function destroy($id)
     {
         $post = Post::findOrFail($id);
 
-        // Prvo obriši komentare vezane za post
+        // Prvo obrisi komentare vezane za post
         Comment::where('post_id', $post->id)->delete();
 
-        // Onda obriši post
+        // Onda obrisi post
         $post->delete();
 
         return response()->json(['message' => 'Post and related comments deleted successfully.']);

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\CommentResource;
 use App\Models\Comment;
 use Illuminate\Http\Request;
 
@@ -23,11 +24,19 @@ class CommentController extends Controller
             'content' => ['required', 'string', 'max:2000'],
         ]);
 
-        $data['user_id'] = $request->user()->id;
+        $user = $request->user();
 
-        $comment = Comment::create($data);
+        if (!in_array((int) ($user->role_id ?? 0), [1, 2], true)) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
 
-        return response()->json($comment, 201);
+        $data['user_id'] = $user->id;
+
+        $comment = Comment::create($data)->load(['user.role']);
+
+        return (new CommentResource($comment))
+            ->response()
+            ->setStatusCode(201);
     }
 
     // GET /api/comments/{comment}
@@ -62,7 +71,6 @@ class CommentController extends Controller
         $comment->delete();
 
         return response()->json(data: ['message' => 'Comment deleted successfully.']);
-
     }
 }
 

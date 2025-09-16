@@ -16,11 +16,12 @@ class CommentResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'post_id' => $this->post_id,
             'content' => $this->content,
-            'user' => new UserResource($this->user), // Prikazuje povezanog korisnika preko UserResource
-            'posts' => new PostResource($this->posts), // Prikazuje povezani post preko PostResource
+            'user' => new UserResource($this->whenLoaded('user') ?? $this->user),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
     }
 }
+
