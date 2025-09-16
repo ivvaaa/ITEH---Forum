@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import useAutoNews from "../api/hooks/useAutoNews";
 
 const HomePage = () => {
   const [posts, setPosts] = useState([]);
@@ -9,6 +10,15 @@ const HomePage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const navigate = useNavigate();
+  const { articles: news, loading: newsLoading, error: newsError, refresh: refreshNews } = useAutoNews();
+
+  const formatPublished = (iso) => {
+    if (!iso) return "Nepoznat datum";
+    const parsed = Date.parse(iso);
+    if (Number.isNaN(parsed)) return iso;
+    return new Date(parsed).toLocaleString("sr-RS", { dateStyle: "medium", timeStyle: "short" });
+  };
+
 
   const POSTS_PER_PAGE = 5;
 
@@ -100,9 +110,63 @@ const HomePage = () => {
           </button>
         ))}
       </div>
+
+      <section style={{ marginTop: 40 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <h2 style={{ margin: 0 }}>Vesti iz auto sveta</h2>
+          <button
+            onClick={refreshNews}
+            disabled={newsLoading}
+            style={{
+              padding: "6px 12px",
+              borderRadius: 6,
+              border: "1px solid #2563eb",
+              background: newsLoading ? "#bfdbfe" : "#2563eb",
+              color: "#fff",
+              cursor: newsLoading ? "not-allowed" : "pointer",
+            }}
+          >
+            {newsLoading ? "Ucitavanje..." : "Osvezi"}
+          </button>
+        </div>
+        {newsLoading ? (
+          <p>Ucitavanje vesti...</p>
+        ) : newsError ? (
+          <p style={{ color: "#b91c1c" }}>{newsError}</p>
+        ) : news.length === 0 ? (
+          <p>Trenutno nema novih vesti.</p>
+        ) : (
+          <div
+            style={{
+              display: "grid",
+              gap: 16,
+              gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+            }}
+          >
+            {news.map((article) => (
+              <article
+                key={article.id}
+                style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 16, background: "#fff" }}
+              >
+                <h3 style={{ fontSize: "1.05rem", marginBottom: 8 }}>{article.title}</h3>
+                <p style={{ fontSize: "0.9rem", color: "#4b5563", minHeight: 60 }}>{article.summary}</p>
+                <div style={{ fontSize: "0.8rem", color: "#6b7280", marginBottom: 8 }}>
+                  <span>{article.source}</span>
+                  <span style={{ marginLeft: 8 }}>- {formatPublished(article.published_at)}</span>
+                </div>
+                <a href={article.url} target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb", fontWeight: 600 }}>
+                  Otvori vest
+                </a>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
     </div>
   );
 };
 
 export default HomePage;
+
 

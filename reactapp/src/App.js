@@ -8,6 +8,7 @@ import CreatePost from './pages/CreatePostPage';
 import AdminStats from './pages/AdminStats';
 import MyPostsPage from './pages/MyPostsPage';
 import Navbar from './components/Navbar';
+import Breadcrumbs from './api/hooks/useBreadcrumbs';
 // import PostsList from './pages/Post/PostsList';
 // import PostDetails from './pages/Post/PostDetails';
 // import Moderator from './pages/Moderator/Moderator';
@@ -36,6 +37,7 @@ function App() {
   return (
     <Router>
       <Navbar isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} roleId={roleId} />
+      <Breadcrumbs />
       <div className="App">
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -69,3 +71,4 @@ function App() {
 }
 
 export default App;
+
