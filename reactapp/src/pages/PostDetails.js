@@ -89,10 +89,14 @@ const PostDetails = () => {
     const [commentValue, setCommentValue] = useState("");
     const [commentError, setCommentError] = useState("");
     const [submitting, setSubmitting] = useState(false);
+    const [activeImage, setActiveImage] = useState(null);
+    const openImage = (src) => setActiveImage(src);
+    const closeImage = () => setActiveImage(null);
 
     const storedUser = useMemo(() => getStoredUser(), []);
     const roleId = useMemo(() => resolveRoleId(storedUser), [storedUser]);
-    const canComment = Boolean(storedUser) && roleId != null && [1, 2].includes(roleId);
+    const authToken = getAuthToken();
+    const canComment = Boolean(authToken) && Boolean(storedUser) && roleId != null && [1, 2].includes(roleId);
 
     useEffect(() => {
         const fetchPost = async () => {
@@ -115,7 +119,7 @@ const PostDetails = () => {
     if (!post) {
         return (
             <div className="post-details-page">
-                <div className="post-details-panel">Učitavanje...</div>
+                <div className="post-details-panel">Ucitavanje...</div>
             </div>
         );
     }
@@ -133,7 +137,7 @@ const PostDetails = () => {
 
         const trimmed = commentValue.trim();
         if (!trimmed) {
-            setCommentError("Unesite sadržaj komentara.");
+            setCommentError("Unesite sadrzaj komentara.");
             return;
         }
 
@@ -167,7 +171,7 @@ const PostDetails = () => {
             setComments((prev) => [...prev, normalized]);
             setCommentValue("");
         } catch (error) {
-            const message = error.response?.data?.message || "Došlo je do greške. Pokušajte ponovo.";
+            const message = error.response?.data?.message || "Doslo je do greske. Pokusajte ponovo.";
             setCommentError(message);
         } finally {
             setSubmitting(false);
@@ -199,7 +203,7 @@ const PostDetails = () => {
                     }}>
                         <span>Autor:</span>
                         <span style={{ fontWeight: 600 }}>{post.user?.name || "Nepoznat korisnik"}</span>
-                        <span style={{ fontSize: "0.95em", color: "rgba(148,163,184,0.78)" }}>• {formatDateTime(post.created_at)}</span>
+                        <span style={{ fontSize: "0.95em", color: "rgba(148,163,184,0.78)" }}>- {formatDateTime(post.created_at)}</span>
                     </div>
                     {/* Auto markirano, veliko, crveni outline */}
                     <div
@@ -229,7 +233,13 @@ const PostDetails = () => {
                 {images.length > 0 && (
                     <section className="post-details-gallery">
                         {images.map((img, idx) => (
-                            <img key={`${img}-${idx}`} src={img} alt="Slika automobila" loading="lazy" />
+                            <img
+                                key={`${img}-${idx}`}
+                                src={img}
+                                alt="Slika automobila"
+                                loading="lazy"
+                                onClick={() => openImage(img)}
+                            />
                         ))}
                     </section>
                 )}
@@ -241,7 +251,7 @@ const PostDetails = () => {
                     </div>
 
                     {comments.length === 0 ? (
-                        <div className="empty-state-box">Još uvek nema komentara.</div>
+                        <div className="empty-state-box">Jos uvek nema komentara.</div>
                     ) : (
                         <div className="post-comments-list">
                             {comments.map((comment) => (
@@ -260,28 +270,56 @@ const PostDetails = () => {
                 <section className="post-comment-form">
                     {canComment ? (
                         <form onSubmit={handleCommentSubmit} className="comment-form">
-                            <label htmlFor="comment-content">Vaš komentar</label>
+                            <label htmlFor="comment-content">Vas komentar</label>
                             <textarea
                                 id="comment-content"
                                 value={commentValue}
                                 onChange={(event) => setCommentValue(event.target.value)}
-                                placeholder="Podelite svoje mišljenje..."
+                                placeholder="Podelite svoje misljenje..."
                                 rows={4}
                             />
                             {commentError && <div className="comment-error">{commentError}</div>}
                             <div className="comment-actions">
                                 <button type="submit" className="btn primary" disabled={submitting}>
-                                    {submitting ? "Slanje..." : "Pošalji komentar"}
+                                    {submitting ? "Slanje..." : "Posalji komentar"}
                                 </button>
                             </div>
                         </form>
                     ) : (
-                        <p className="comment-disabled">Samo ulogovani korisnici sa ulogom 1 ili 2 mogu da ostave komentar.</p>
+                        <p className="comment-disabled">Samo ulogovani korisnici mogu da ostave komentar.</p>
                     )}
                 </section>
             </section>
+            {activeImage && (
+                <div className="image-lightbox" onClick={closeImage} role="presentation">
+                    <div className="image-lightbox__inner" onClick={(event) => event.stopPropagation()}>
+                        <button type="button" className="image-lightbox__close" onClick={closeImage}>
+                            X
+                        </button>
+                        <img src={activeImage} alt="Prikaz slike automobila" />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
 
 export default PostDetails;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -17,20 +17,30 @@ class PostController extends Controller
      */
     public function index(Request $request)
     {
+        $perPage = (int) $request->input('per_page', 7);
+
         $query = Post::with(['user', 'car'])->latest();
 
         if ($request->boolean('mine')) {
-            $query->where('user_id', Auth::id());
+            $userId = optional($request->user('sanctum'))->id ?? Auth::id();
+
+            if (!$userId) {
+                $empty = Post::with(['user', 'car'])->whereRaw('0 = 1')->paginate($perPage);
+                return PostResource::collection($empty);
+            }
+
+            $query->where('user_id', $userId);
         }
 
-        if ($request->has('car_make')) {
+        if ($request->filled('car_make')) {
             $carMake = $request->input('car_make');
             $query->whereHas('car', function ($q) use ($carMake) {
-                $q->where('make', 'like', "%$carMake%");
+                $q->where('make', 'like', "%$carMake%")
+                    ->orWhere('model', 'like', "%$carMake%");
             });
         }
 
-        if ($request->has('search')) {
+        if ($request->filled('search')) {
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
                 $q->where('content', 'like', "%$search%")
@@ -41,11 +51,8 @@ class PostController extends Controller
             });
         }
 
-        $perPage = $request->input('per_page', 5);
-
         return PostResource::collection($query->paginate($perPage));
     }
-
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -180,4 +187,7 @@ class PostController extends Controller
         return response()->json(['message' => 'Post and related comments deleted successfully.']);
     }
 }
+
+
+
 

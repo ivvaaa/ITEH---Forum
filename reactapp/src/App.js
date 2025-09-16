@@ -4,11 +4,11 @@ import './App.css';
 import HomePage from './pages/HomePage';
 import Register from './pages/RegisterPage';
 import Login from './pages/LoginPage';
-import CreatePost from './pages/CreatePostPage';
+import CreatePostPage from './pages/CreatePostPage';
 import AdminStats from './pages/AdminStats';
 import MyPostsPage from './pages/MyPostsPage';
 import Navbar from './components/Navbar';
-import Breadcrumbs from './api/hooks/useBreadcrumbs';
+
 // import PostsList from './pages/Post/PostsList';
 // import PostDetails from './pages/Post/PostDetails';
 // import Moderator from './pages/Moderator/Moderator';
@@ -33,11 +33,9 @@ function App() {
     }
   }, [isLoggedIn]);
 
-
   return (
     <Router>
       <Navbar isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} roleId={roleId} />
-      <Breadcrumbs />
       <div className="App">
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -53,7 +51,7 @@ function App() {
               )}
               {(roleId == 1 || roleId == 2) && (
                 <>
-                  <Route path="/create" element={<CreatePost />} />
+                  <Route path="/create" element={<CreatePostPage />} />
                   <Route path="/posts" element={<MyPostsPage />} />
                 </>
 
@@ -71,4 +69,3 @@ function App() {
 }
 
 export default App;
-

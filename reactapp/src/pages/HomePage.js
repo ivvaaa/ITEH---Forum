@@ -86,18 +86,8 @@ const HomePage = () => {
               <span>NEED FOR</span>
               <span className="stroke">SPEED</span>
             </h1>
-            <p className="hero-description">
-              Tvoja pit-stop stanica za trkačke priče, tuning savete i sve što pokreće auto entuzijaste. Priključi se
-              zajednici koja živi za oktane.
-            </p>
-            {/* <div className="hero-actions">
-              <button type="button" className="btn primary" onClick={scrollToPosts}>
-                Pogledaj postove
-              </button>
-              <button type="button" className="btn ghost" onClick={handleCreatePost}>
-                Kreiraj objavu
-              </button>
-            </div> */}
+
+
 
           </div>
           <div className="hero-visual" aria-hidden="true">

@@ -19,8 +19,6 @@ export default function Navbar({ isLoggedIn, setIsLoggedIn, roleId }) {
   const nav = useNavigate();
   const user = getUser();
 
-
-
   const logout = async () => {
     try {
       await api.post("/api/logout");
@@ -43,13 +41,15 @@ export default function Navbar({ isLoggedIn, setIsLoggedIn, roleId }) {
     <header className="app-navbar">
       <div className="navbar-inner">
         <Link to="/" className="brand">
-          ITEH<span>FORUM</span>
+          CARTEH<span>FORUM</span>
         </Link>
-        <nav className="nav-links">
+
+        <nav className="navbar-center">
           <NavLink to="/" className={navLinkClass}>
             Pocetna
           </NavLink>
         </nav>
+
         <div className="nav-actions">
           {isLoggedIn ? (
             <>
@@ -68,9 +68,7 @@ export default function Navbar({ isLoggedIn, setIsLoggedIn, roleId }) {
                   Statistika
                 </NavLink>
               )}
-              <span className="nav-user">
-                {user?.name ? `Zdravo, ${user.name}` : ""}
-              </span>
+              <span className="nav-user">{user?.name ? `Zdravo, ${user.name}` : ""}</span>
               <button type="button" className="nav-btn outline" onClick={logout}>
                 Odjava
               </button>
@@ -80,10 +78,7 @@ export default function Navbar({ isLoggedIn, setIsLoggedIn, roleId }) {
               <NavLink to="/login" className={navGhostButton}>
                 Prijava
               </NavLink>
-              <NavLink
-                to="/register"
-                className={({ isActive }) => `nav-btn primary${isActive ? " active" : ""}`}
-              >
+              <NavLink to="/register" className={({ isActive }) => `nav-btn primary${isActive ? " active" : ""}`}>
                 Registracija
               </NavLink>
             </>
@@ -93,5 +88,4 @@ export default function Navbar({ isLoggedIn, setIsLoggedIn, roleId }) {
     </header>
   );
 }
-
 

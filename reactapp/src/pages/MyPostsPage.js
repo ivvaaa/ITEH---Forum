@@ -1,5 +1,5 @@
-﻿import React, { useEffect, useState } from "react";
-import axios from "axios";
+import React, { useEffect, useState, useCallback } from "react";
+import api from "../api/axios";
 import "./managePages.css";
 
 const initialFormState = {
@@ -19,30 +19,46 @@ const MyPostsPage = () => {
     const [form, setForm] = useState(initialFormState);
     const [saving, setSaving] = useState(false);
 
-    const fetchPosts = async () => {
+    const fetchPosts = useCallback(async () => {
         setLoading(true);
         setError("");
-        const token = sessionStorage.getItem("auth_token") || localStorage.getItem("access_token");
         try {
-            const res = await axios.get("http://127.0.0.1:8000/api/posts", {
-                params: { mine: true, per_page: 50 },
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
+            const first = await api.get("/api/posts", {
+                params: { mine: true, per_page: 50, page: 1 },
             });
-            setPosts(res.data?.data || []);
+
+            let allPosts = first.data?.data || [];
+            const meta = first.data?.meta || {};
+            const lastPage = Number(meta.last_page || 1);
+
+            if (lastPage > 1) {
+                const requests = [];
+                for (let page = 2; page <= lastPage; page += 1) {
+                    requests.push(api.get("/api/posts", {
+                        params: { mine: true, per_page: 50, page },
+                    }));
+                }
+
+                const responses = await Promise.all(requests);
+                responses.forEach((response) => {
+                    allPosts = allPosts.concat(response.data?.data || []);
+                });
+            }
+
+            setPosts(allPosts);
         } catch (err) {
             console.error(err);
-            setError("Nije moguće učitati tvoje objave.");
+            const message = err.response?.data?.message || "Nije moguce ucitati tvoje objave.";
+            setError(message);
             setPosts([]);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         fetchPosts();
-    }, []);
+    }, [fetchPosts]);
 
     const startEdit = (post) => {
         setEditingId(post.id);
@@ -62,20 +78,20 @@ const MyPostsPage = () => {
         setForm(initialFormState);
     };
 
-    const handleInputChange = (field) => (e) => {
-        setForm(prev => ({ ...prev, [field]: e.target.value }));
+    const handleInputChange = (field) => (event) => {
+        setForm((prev) => ({ ...prev, [field]: event.target.value }));
     };
 
-    const handleImageChange = (e) => {
-        setForm(prev => ({ ...prev, images: Array.from(e.target.files || []) }));
+    const handleImageChange = (event) => {
+        setForm((prev) => ({ ...prev, images: Array.from(event.target.files || []) }));
     };
 
-    const handleUpdate = async (e) => {
-        e.preventDefault();
+    const handleUpdate = async (event) => {
+        event.preventDefault();
         if (!editingId) return;
         setSaving(true);
         setError("");
-        const token = sessionStorage.getItem("auth_token") || localStorage.getItem("access_token");
+
         const formData = new FormData();
         formData.append("_method", "PUT");
         formData.append("content", form.content);
@@ -88,17 +104,16 @@ const MyPostsPage = () => {
         });
 
         try {
-            await axios.post(`http://127.0.0.1:8000/api/posts/${editingId}`, formData, {
+            await api.post(`/api/posts/${editingId}`, formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
-                    Authorization: `Bearer ${token}`,
                 },
             });
             cancelEdit();
             fetchPosts();
         } catch (err) {
             console.error(err);
-            setError("Greška pri ažuriranju posta. Pokušaj ponovo.");
+            setError("Greska pri azuriranju posta. Pokusaj ponovo.");
         } finally {
             setSaving(false);
         }
@@ -108,7 +123,7 @@ const MyPostsPage = () => {
         return (
             <div className="page-shell">
                 <section className="page-card narrow">
-                    <p className="meta-line">Učitavanje...</p>
+                    <p className="meta-line">Ucitavanje...</p>
                 </section>
             </div>
         );
@@ -119,11 +134,11 @@ const MyPostsPage = () => {
             <section className="page-card">
                 <header className="page-header">
                     <h1>Moje objave</h1>
-                    <p>Pregledaj, ažuriraj ili osveži svoje postove sa staze i iz garaže.</p>
+                    <p>Pregledaj, azuriraj ili osvezi svoje postove sa staze i iz garaze.</p>
                 </header>
                 {error && <div className="alert">{error}</div>}
                 {posts.length === 0 ? (
-                    <div className="empty-state-box">Još uvek nema objava. Kreiraj svoju prvu priču o automobilu!</div>
+                    <div className="empty-state-box">Jos uvek nema objava. Kreiraj svoju prvu pricu o automobilu!</div>
                 ) : (
                     <div className="posts-collection">
                         {posts.map((post) => (
@@ -154,7 +169,7 @@ const MyPostsPage = () => {
                                                 <input type="text" value={form.carModel} onChange={handleInputChange("carModel")} required />
                                             </label>
                                             <label className="form-field small">
-                                                <span>Godište</span>
+                                                <span>Godiste</span>
                                                 <input type="number" min="1900" max="2099" value={form.carYear} onChange={handleInputChange("carYear")} required />
                                             </label>
                                         </div>
@@ -168,10 +183,10 @@ const MyPostsPage = () => {
                                         </label>
                                         <div className="form-actions">
                                             <button type="submit" className="btn primary small" disabled={saving}>
-                                                {saving ? "Čuvanje..." : "Sačuvaj"}
+                                                {saving ? "Cuvanje..." : "Sacuvaj"}
                                             </button>
                                             <button type="button" className="btn ghost small" onClick={cancelEdit}>
-                                                Otkaži
+                                                Otkazi
                                             </button>
                                         </div>
                                     </form>

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import api from "../api/axios";
+import "./adminStats.css";
 
 const INITIAL_FILTERS = { search: "", role: "" };
 
@@ -40,16 +41,12 @@ const AdminStats = () => {
         response = await api.get("/api/users");
       }
 
-      const list = Array.isArray(response.data)
-        ? response.data
-        : response.data?.data || [];
-
+      const list = Array.isArray(response.data) ? response.data : response.data?.data || [];
       setUsers(list);
       setError("");
     } catch (err) {
       console.error(err);
-      const message =
-        err.response?.data?.message || "Neuspesno ucitavanje korisnika.";
+      const message = err.response?.data?.message || "Neuspesno ucitavanje korisnika.";
       setError(message);
       setUsers([]);
     } finally {
@@ -89,8 +86,7 @@ const AdminStats = () => {
   const stats = useMemo(() => {
     const perRole = users.reduce((acc, user) => {
       const label =
-        user?.role?.name ||
-        (user.role_id != null ? `Role #${user.role_id}` : "Bez dodeljene role");
+        user?.role?.name || (user.role_id != null ? `Role #${user.role_id}` : "Bez dodeljene role");
       acc[label] = (acc[label] || 0) + 1;
       return acc;
     }, {});
@@ -121,8 +117,7 @@ const AdminStats = () => {
       await loadUsers(filters);
     } catch (err) {
       console.error(err);
-      const message =
-        err.response?.data?.message || "Azuriranje role nije uspelo.";
+      const message = err.response?.data?.message || "Azuriranje role nije uspelo.";
       setError(message);
     } finally {
       setUpdatingId(null);
@@ -130,10 +125,7 @@ const AdminStats = () => {
   };
 
   const handleDeleteUser = async userId => {
-    const confirmed = window.confirm(
-      "Da li ste sigurni da zelite da obrisete korisnika?"
-    );
-    if (!confirmed) {
+    if (!window.confirm("Da li si siguran da zelis da obrises korisnika?")) {
       return;
     }
     setDeletingId(userId);
@@ -143,203 +135,137 @@ const AdminStats = () => {
       await loadUsers(filters);
     } catch (err) {
       console.error(err);
-      const message =
-        err.response?.data?.message || "Brisanje korisnika nije uspelo.";
+      const message = err.response?.data?.message || "Brisanje korisnika nije uspelo.";
       setError(message);
     } finally {
       setDeletingId(null);
     }
   };
 
-  const roleStatsEntries = Object.entries(stats.perRole);
-
   return (
-    <div style={{ maxWidth: 1100, margin: "20px auto", padding: "0 16px" }}>
-      <h1>Admin statistika</h1>
-      <p style={{ color: "#555", marginBottom: 24 }}>
-        Pregledaj korisnike, menjaj role i ukloni naloge po potrebi.
-      </p>
-
-      <div
-        style={{
-          display: "flex",
-          gap: 16,
-          flexWrap: "wrap",
-          marginBottom: 24,
-        }}
-      >
-        <div
-          style={{
-            border: "1px solid #e0e0e0",
-            borderRadius: 8,
-            padding: "12px 16px",
-            minWidth: 180,
-          }}
-        >
-          <div style={{ fontSize: 28, fontWeight: 700 }}>{stats.total}</div>
-          <div style={{ color: "#666" }}>Ukupno korisnika</div>
-        </div>
-        {roleStatsEntries.map(([roleName, count]) => (
-          <div
-            key={roleName}
-            style={{
-              border: "1px solid #e0e0e0",
-              borderRadius: 8,
-              padding: "12px 16px",
-              minWidth: 180,
-            }}
-          >
-            <div style={{ fontSize: 22, fontWeight: 600 }}>{count}</div>
-            <div style={{ color: "#666" }}>{roleName}</div>
+    <div className="admin-stats-page">
+      <section className="admin-card">
+        <header className="admin-stats-header">
+          <div className="admin-stats-heading">
+            <h1>Statistika korisnika</h1>
           </div>
-        ))}
-      </div>
-
-      <form
-        onSubmit={handleFilterSubmit}
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 12,
-          marginBottom: 16,
-        }}
-      >
-        <input
-          type="text"
-          name="search"
-          value={filters.search}
-          onChange={handleFilterChange}
-          placeholder="Pretrazi ime ili email"
-          style={{ minWidth: 200, padding: 8 }}
-        />
-        <select
-          name="role"
-          value={filters.role}
-          onChange={handleFilterChange}
-          style={{ minWidth: 180, padding: 8 }}
-        >
-          <option value="">Sve role</option>
-          {roleOptions.map(role => (
-            <option key={role.id} value={role.name}>
-              {role.name}
-            </option>
-          ))}
-        </select>
-        <button type="submit" style={{ padding: "8px 16px" }}>
-          Primeni filtere
-        </button>
-        <button
-          type="button"
-          onClick={handleResetFilters}
-          style={{ padding: "8px 16px" }}
-        >
-          Resetuj
-        </button>
-      </form>
-
-      {error && (
-        <div style={{ marginBottom: 16, color: "#b00020" }}>{error}</div>
-      )}
-
-      {loading ? (
-        <div>Ucitavanje korisnika...</div>
-      ) : users.length === 0 ? (
-        <div>Nema korisnika za prikaz.</div>
-      ) : (
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ background: "#f5f5f5" }}>
-                <th
-                  style={{
-                    textAlign: "left",
-                    padding: "12px",
-                    borderBottom: "1px solid #ddd",
-                  }}
-                >
-                  Korisnik
-                </th>
-                <th
-                  style={{
-                    textAlign: "left",
-                    padding: "12px",
-                    borderBottom: "1px solid #ddd",
-                  }}
-                >
-                  Email
-                </th>
-                <th
-                  style={{
-                    textAlign: "left",
-                    padding: "12px",
-                    borderBottom: "1px solid #ddd",
-                  }}
-                >
-                  Rola
-                </th>
-                <th
-                  style={{
-                    textAlign: "left",
-                    padding: "12px",
-                    borderBottom: "1px solid #ddd",
-                  }}
-                >
-                  Akcije
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map(user => (
-                <tr key={user.id} style={{ borderBottom: "1px solid #eee" }}>
-                  <td style={{ padding: "12px" }}>{user.name}</td>
-                  <td style={{ padding: "12px" }}>{user.email}</td>
-                  <td style={{ padding: "12px" }}>
-                    <select
-                      value={user.role_id != null ? String(user.role_id) : ""}
-                      onChange={event => {
-                        const nextRoleId = Number(event.target.value);
-                        if (!nextRoleId || nextRoleId === user.role_id) return;
-                        handleRoleUpdate(user.id, nextRoleId);
-                      }}
-                      disabled={
-                        updatingId === user.id ||
-                        deletingId === user.id ||
-                        roleOptions.length === 0
-                      }
-                      style={{ padding: 6 }}
-                    >
-                      {roleOptions.map(role => (
-                        <option key={role.id} value={String(role.id)}>
-                          {role.name}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td style={{ padding: "12px" }}>
-                    <button
-                      onClick={() => handleDeleteUser(user.id)}
-                      disabled={deletingId === user.id || updatingId === user.id}
-                      style={{
-                        padding: "6px 12px",
-                        borderRadius: 6,
-                        border: "1px solid #d32f2f",
-                        background: "#fbeaea",
-                        color: "#d32f2f",
-                        cursor:
-                          deletingId === user.id || updatingId === user.id
-                            ? "not-allowed"
-                            : "pointer",
-                      }}
-                    >
-                      {deletingId === user.id ? "Brisanje..." : "Obrisi"}
-                    </button>
-                  </td>
-                </tr>
+          <div className="admin-stats-summary">
+            <div className="summary-card summary-card--highlight">
+              <span className="summary-label">Ukupno korisnika</span>
+              <strong>{stats.total}</strong>
+            </div>
+            <div className="summary-list">
+              {Object.entries(stats.perRole).map(([label, count]) => (
+                <div key={label} className="summary-card">
+                  <span className="summary-label">{label}</span>
+                  <strong>{count}</strong>
+                </div>
               ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+            </div>
+          </div>
+        </header>
+
+        <form className="admin-stats-filters" onSubmit={handleFilterSubmit}>
+          <div className="filter-group">
+            <label htmlFor="filter-search">Pretraga</label>
+            <input
+              id="filter-search"
+              name="search"
+              className="filter-input"
+              type="text"
+              value={filters.search}
+              onChange={handleFilterChange}
+              placeholder="Ime ili email"
+            />
+          </div>
+          <div className="filter-group">
+            <label htmlFor="filter-role">Rola</label>
+            <select
+              id="filter-role"
+              name="role"
+              className="filter-select"
+              value={filters.role}
+              onChange={handleFilterChange}
+            >
+              <option value="">Sve role</option>
+              {roleOptions.map(role => (
+                <option key={role.id} value={role.name}>
+                  {role.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-actions">
+            <button type="submit" className="admin-btn primary">
+              Primeni
+            </button>
+            <button type="button" className="admin-btn ghost" onClick={handleResetFilters}>
+              Resetuj
+            </button>
+          </div>
+        </form>
+
+        {error && <div className="admin-stats-error">{error}</div>}
+
+        {loading ? (
+          <div className="admin-stats-status">Ucitavanje korisnika...</div>
+        ) : users.length === 0 ? (
+          <div className="admin-stats-status">Nema korisnika za prikaz.</div>
+        ) : (
+          <div className="admin-stats-table-wrapper">
+            <table className="admin-stats-table">
+              <thead>
+                <tr>
+                  <th>Korisnik</th>
+                  <th>Email</th>
+                  <th>Rola</th>
+                  <th>Akcije</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map(user => (
+                  <tr key={user.id}>
+                    <td>{user.name}</td>
+                    <td>{user.email}</td>
+                    <td>
+                      <select
+                        className="admin-role-select"
+                        value={user.role_id != null ? String(user.role_id) : ""}
+                        onChange={event => {
+                          const nextRoleId = Number(event.target.value);
+                          if (!nextRoleId || nextRoleId === user.role_id) return;
+                          handleRoleUpdate(user.id, nextRoleId);
+                        }}
+                        disabled={
+                          updatingId === user.id ||
+                          deletingId === user.id ||
+                          roleOptions.length === 0
+                        }
+                      >
+                        {roleOptions.map(role => (
+                          <option key={role.id} value={String(role.id)}>
+                            {role.name}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="admin-delete-btn"
+                        onClick={() => handleDeleteUser(user.id)}
+                        disabled={deletingId === user.id || updatingId === user.id}
+                      >
+                        {deletingId === user.id ? "Brisanje..." : "Obrisi"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </div>
   );
 };

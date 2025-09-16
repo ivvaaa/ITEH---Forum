@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import api from "../api/axios";
+import "./authPages.css";
 
 export default function Login({ setIsLoggedIn }) {
   const nav = useNavigate();
@@ -21,13 +22,15 @@ export default function Login({ setIsLoggedIn }) {
   const submit = async (e) => {
     e.preventDefault();
     setError("");
-    if (!email || !password) return setError("Unesite email i lozinku.");
+    if (!email || !password) {
+      setError("Unesite email i lozinku.");
+      return;
+    }
     setLoading(true);
     try {
       const { data } = await api.post("/api/login", { email, password });
       if (!data?.access_token) throw new Error("Nema tokena.");
 
-      // čuvaj u OBA storage-a (da radi i axios i tvoj App)
       localStorage.setItem("token", data.access_token);
       localStorage.setItem("user", JSON.stringify(data.user || null));
       sessionStorage.setItem("auth_token", data.access_token);
@@ -38,35 +41,65 @@ export default function Login({ setIsLoggedIn }) {
       const to = loc.state?.from?.pathname || "/";
       nav(to, { replace: true });
     } catch (err) {
-      setError("Pogrešan email ili lozinka.");
+      setError("Pogresan email ili lozinka.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: 380, margin: "0 auto" }}>
-      <h1>Prijava</h1>
-      <form onSubmit={submit}>
-        <label className="input-container">
-          <span className="input-label">Email</span>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input-field" />
-        </label>
-        <label className="input-container">
-          <span className="input-label">Lozinka</span>
-          <div style={{ display: "flex", gap: 8 }}>
-            <input type={show ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} className="input-field" />
-            <button type="button" onClick={() => setShow(s => !s)} style={{ padding: "6px 10px" }}>{show ? "Hide" : "Show"}</button>
-          </div>
-        </label>
-        {error && <div style={{ color: "crimson" }}>{error}</div>}
-        <button type="submit" disabled={loading} style={{ marginTop: 8 }}>
-          {loading ? "U toku…" : "Uloguj se"}
-        </button>
-      </form>
-      <p style={{ marginTop: 12 }}>
-        Nemate nalog? <Link to="/register">Registrujte se</Link>
-      </p>
+    <div className="auth-page">
+      <div className="auth-card">
+        <h1 className="auth-title">Prijava</h1>
+        <p className="auth-subtitle">Dobrodosli nazad! Ulogujte se i nastavite razgovor sa zajednicom.</p>
+
+        <form onSubmit={submit} className="auth-form">
+          <label className="auth-field">
+            <span>Email</span>
+            <input
+              className="auth-input"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="primer@domen.com"
+              required
+            />
+          </label>
+
+          <label className="auth-field">
+            <span>Lozinka</span>
+            <div className="auth-input-group">
+              <input
+                className="auth-input"
+                type={show ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Unesite lozinku"
+                required
+              />
+              <button
+                type="button"
+                className="auth-toggle"
+                onClick={() => setShow((value) => !value)}
+              >
+                {show ? "Sakrij" : "Prikazi"}
+              </button>
+            </div>
+          </label>
+
+          {error && <div className="auth-error">{error}</div>}
+
+          <button type="submit" className="auth-button" disabled={loading}>
+            {loading ? "Prijava..." : "Uloguj se"}
+          </button>
+        </form>
+
+        <p className="auth-footer">
+          Nemate nalog? <Link to="/register" className="auth-link">Registrujte se</Link>
+        </p>
+      </div>
     </div>
   );
 }
+
+

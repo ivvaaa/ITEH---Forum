@@ -25,15 +25,37 @@ class PostResource extends JsonResource
 
         $images = collect(is_array($rawImages) ? $rawImages : [])
             ->filter()
+            ->flatMap(function ($item) {
+                if (is_string($item) && Str::startsWith(trim($item), '[') && Str::endsWith(trim($item), ']')) {
+                    $decoded = json_decode($item, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        return $decoded;
+                    }
+                }
+                return [$item];
+            })
             ->map(function ($path) {
-                if (Str::startsWith($path, ['http://', 'https://'])) {
-                    return $path;
+                if (!is_string($path)) {
+                    return null;
                 }
 
-                $normalized = '/' . ltrim($path, '/');
+                $clean = trim($path, "\" \t\n\r\0\x0B");
+                $clean = Str::replace('\\', '/', $clean);
+
+                if ($clean === '' || $clean === '[]') {
+                    return null;
+                }
+
+                if (Str::startsWith($clean, ['http://', 'https://'])) {
+                    return $clean;
+                }
+
+                $normalized = '/' . ltrim($clean, '/');
 
                 return URL::to($normalized);
             })
+            ->filter()
+            ->unique()
             ->values()
             ->all();
 
