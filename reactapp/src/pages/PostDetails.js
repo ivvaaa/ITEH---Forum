@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../api/axios";
 import "./postDetails.css";
 
 const getStoredUser = () => {
@@ -89,6 +89,8 @@ const PostDetails = () => {
     const [commentValue, setCommentValue] = useState("");
     const [commentError, setCommentError] = useState("");
     const [submitting, setSubmitting] = useState(false);
+    const [likePending, setLikePending] = useState(false);
+    const [likeError, setLikeError] = useState("");
     const [activeImage, setActiveImage] = useState(null);
     const openImage = (src) => setActiveImage(src);
     const closeImage = () => setActiveImage(null);
@@ -96,14 +98,15 @@ const PostDetails = () => {
     const storedUser = useMemo(() => getStoredUser(), []);
     const roleId = useMemo(() => resolveRoleId(storedUser), [storedUser]);
     const authToken = getAuthToken();
-    const canComment = Boolean(authToken) && Boolean(storedUser) && roleId != null && [1, 2].includes(roleId);
+    const canInteract = Boolean(authToken) && Boolean(storedUser) && roleId != null && [1, 2].includes(roleId);
+    const canLike = canInteract;
+    const canComment = canInteract;
 
     useEffect(() => {
         const fetchPost = async () => {
             try {
-                const token = getAuthToken();
-                const headers = token ? { Authorization: `Bearer ${token}` } : {};
-                const response = await axios.get(`http://127.0.0.1:8000/api/posts/${id}`, { headers });
+                setLikeError("");
+                const response = await api.get(`/api/posts/${id}`);
                 const payload = response.data?.data || response.data || {};
                 setPost(payload);
                 setComments(extractComments(payload.comments));
@@ -125,6 +128,9 @@ const PostDetails = () => {
     }
 
     const images = normalizeImages(post.images);
+    const likeCount = Number(post.likes_count ?? 0);
+    const likeButtonDisabled = !canLike || likePending;
+    const likeTitle = !canLike ? "Samo prijavljeni korisnici sa ulogom korisnik ili admin mogu da lajkuju." : undefined;
 
     const handleCommentSubmit = async (event) => {
         event.preventDefault();
@@ -150,18 +156,10 @@ const PostDetails = () => {
         setSubmitting(true);
 
         try {
-            const response = await axios.post(
-                "http://127.0.0.1:8000/api/comments",
-                {
-                    post_id: post.id,
-                    content: trimmed,
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
+            const response = await api.post("/api/comments", {
+                post_id: post.id,
+                content: trimmed,
+            });
 
             const created = response.data?.data || response.data || {};
             const normalized = {
@@ -175,6 +173,57 @@ const PostDetails = () => {
             setCommentError(message);
         } finally {
             setSubmitting(false);
+        }
+    };
+
+    const handleToggleLike = async () => {
+        if (!post || !canLike) {
+            if (!canLike) {
+                setLikeError("Samo prijavljeni korisnici sa ulogom korisnik ili admin mogu da lajkuju.");
+            }
+            return;
+        }
+
+        if (likePending) {
+            return;
+        }
+
+        setLikeError("");
+        setLikePending(true);
+
+        try {
+            const response = post.liked_by_current_user
+                ? await api.delete(`/api/posts/${post.id}/like`)
+                : await api.post(`/api/posts/${post.id}/like`);
+
+            const payload = response?.data || {};
+            const likesCount = typeof payload.likes_count === "number" ? payload.likes_count : undefined;
+            const likedFlag = typeof payload.liked === "boolean" ? payload.liked : !post.liked_by_current_user;
+
+            setPost((prev) => {
+                if (!prev) {
+                    return prev;
+                }
+
+                const currentCount = Number(prev.likes_count ?? 0);
+                const nextCount = likesCount !== undefined
+                    ? likesCount
+                    : prev.liked_by_current_user
+                        ? Math.max(currentCount - 1, 0)
+                        : currentCount + 1;
+
+                return {
+                    ...prev,
+                    likes_count: nextCount,
+                    liked_by_current_user: likedFlag,
+                };
+            });
+        } catch (error) {
+            console.error(error);
+            const message = error.response?.data?.message || "Nije moguce azurirati lajk. Pokusaj ponovo.";
+            setLikeError(message);
+        } finally {
+            setLikePending(false);
         }
     };
 
@@ -229,6 +278,22 @@ const PostDetails = () => {
                 <article className="post-details-body" style={{ textAlign: "center", fontSize: "1.13rem" }}>
                     <p>{post.content}</p>
                 </article>
+
+                <section className="post-like-bar">
+                    <button
+                        type="button"
+                        className={`btn link ${post.liked_by_current_user ? "active" : ""}`}
+                        onClick={handleToggleLike}
+                        disabled={likeButtonDisabled}
+                        title={likeTitle}
+                    >
+                        {post.liked_by_current_user ? "Ukloni lajk" : "Svidja mi se"}
+                    </button>
+                    <span className="like-count">
+                        {likeCount} {likeCount === 1 ? "lajk" : "lajkova"}
+                    </span>
+                </section>
+                {likeError && <div className="like-error">{likeError}</div>}
 
                 {images.length > 0 && (
                     <section className="post-details-gallery">
@@ -305,21 +370,3 @@ const PostDetails = () => {
 };
 
 export default PostDetails;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

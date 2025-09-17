@@ -1,8 +1,52 @@
 ﻿import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import api from "../api/axios";
 import useAutoNews from "../api/hooks/useAutoNews";
 import "./homePage.css";
+
+const getStoredUser = () => {
+  try {
+    return (
+      JSON.parse(sessionStorage.getItem("user")) ||
+      JSON.parse(localStorage.getItem("user")) ||
+      null
+    );
+  } catch (error) {
+    return null;
+  }
+};
+
+const resolveRoleId = (user) => {
+  const storedRole = sessionStorage.getItem("role_id");
+  if (storedRole) {
+    const parsed = Number(storedRole);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  if (user?.role_id != null) {
+    const parsed = Number(user.role_id);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  if (user?.role?.id != null) {
+    const parsed = Number(user.role.id);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  return null;
+};
+
+const getAuthToken = () => {
+  return (
+    sessionStorage.getItem("auth_token") ||
+    localStorage.getItem("access_token") ||
+    localStorage.getItem("token") ||
+    null
+  );
+};
 
 const HomePage = () => {
   const [posts, setPosts] = useState([]);
@@ -10,6 +54,13 @@ const HomePage = () => {
   const [carMake, setCarMake] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
+  const [pendingLikes, setPendingLikes] = useState([]);
+
+  const storedUser = getStoredUser();
+  const roleId = resolveRoleId(storedUser);
+  const authToken = getAuthToken();
+  const canLike = Boolean(authToken) && Boolean(storedUser) && roleId != null && [1, 2].includes(roleId);
+
   const navigate = useNavigate();
   const { articles: news, loading: newsLoading, error: newsError, refresh: refreshNews } = useAutoNews();
 
@@ -23,16 +74,22 @@ const HomePage = () => {
   const POSTS_PER_PAGE = 5;
 
   const fetchPosts = async (query = "", carMakeValue = "", page = 1, perPage = POSTS_PER_PAGE) => {
-    const token = sessionStorage.getItem("auth_token") || localStorage.getItem("access_token");
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    const res = await axios.get("http://127.0.0.1:8000/api/posts", {
-      params: { search: query, car_make: carMakeValue, page, per_page: perPage },
-      headers,
-    });
-
-    setPosts(res.data.data);
-    setCurrentPage(res.data.meta?.current_page ?? 1);
-    setLastPage(res.data.meta?.last_page ?? 1);
+    try {
+      const res = await api.get("/api/posts", {
+        params: { search: query, car_make: carMakeValue, page, per_page: perPage },
+      });
+      const payload = res.data || {};
+      setPosts(payload.data || []);
+      setCurrentPage(payload.meta?.current_page ?? 1);
+      setLastPage(payload.meta?.last_page ?? 1);
+    } catch (error) {
+      console.error(error);
+      setPosts([]);
+      setCurrentPage(1);
+      setLastPage(1);
+    } finally {
+      setPendingLikes([]);
+    }
   };
 
   const handleReset = () => {
@@ -45,8 +102,8 @@ const HomePage = () => {
     fetchPosts();
   }, []);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
+  const handleSearch = (event) => {
+    event.preventDefault();
     fetchPosts(search, carMake, 1);
   };
 
@@ -73,6 +130,55 @@ const HomePage = () => {
   const scrollToPosts = () => scrollToSection("posts-feed");
   const scrollToNews = () => scrollToSection("news-section");
 
+  const handleToggleLike = async (postId, currentlyLiked) => {
+    if (!canLike) {
+      return;
+    }
+
+    if (pendingLikes.includes(postId)) {
+      return;
+    }
+
+    setPendingLikes((prev) => (prev.includes(postId) ? prev : [...prev, postId]));
+
+    try {
+      const response = currentlyLiked
+        ? await api.delete(`/api/posts/${postId}/like`)
+        : await api.post(`/api/posts/${postId}/like`);
+
+      const payload = response?.data || {};
+      const likesCount = typeof payload.likes_count === "number" ? payload.likes_count : undefined;
+      const likedFlag = typeof payload.liked === "boolean" ? payload.liked : !currentlyLiked;
+
+      setPosts((prevPosts) =>
+        prevPosts.map((post) => {
+          if (post.id !== postId) {
+            return post;
+          }
+
+          const currentCount = Number(post.likes_count ?? 0);
+          const nextCount = likesCount !== undefined
+            ? likesCount
+            : currentlyLiked
+              ? Math.max(currentCount - 1, 0)
+              : currentCount + 1;
+
+          return {
+            ...post,
+            likes_count: nextCount,
+            liked_by_current_user: likedFlag,
+          };
+        })
+      );
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setPendingLikes((prev) => prev.filter((id) => id !== postId));
+    }
+  };
+
+  const likeDisabledMessage = "Samo prijavljeni korisnici sa ulogom korisnik ili admin mogu da lajkuju.";
+
   return (
     <div className="homepage">
       <section className="hero-section">
@@ -86,9 +192,6 @@ const HomePage = () => {
               <span>NEED FOR</span>
               <span className="stroke">SPEED</span>
             </h1>
-
-
-
           </div>
           <div className="hero-visual" aria-hidden="true">
             <img
@@ -103,8 +206,8 @@ const HomePage = () => {
       <section className="search-panel" id="search-panel">
         <div className="panel-header">
           <div>
-            <h2>Pronađi savršen automobil i ekipu</h2>
-            <p>Filtriraj objave po marki ili potraži omiljenog autora.</p>
+            <h2>Pronadi savrsen automobil i ekipu</h2>
+            <p>Filtriraj objave po marki ili potrazi omiljenog autora.</p>
           </div>
           <button type="button" className="btn link" onClick={handleReset}>
             Resetuj filtere
@@ -112,12 +215,12 @@ const HomePage = () => {
         </div>
         <form className="search-form" onSubmit={handleSearch}>
           <label className="field">
-            <span>Pretraži postove, korisnike...</span>
+            <span>Pretrazi postove, korisnike...</span>
             <input
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Unesi ključnu reč"
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Unesi kljucnu rec"
             />
           </label>
           <label className="field">
@@ -125,12 +228,12 @@ const HomePage = () => {
             <input
               type="text"
               value={carMake}
-              onChange={(e) => setCarMake(e.target.value)}
+              onChange={(event) => setCarMake(event.target.value)}
               placeholder="npr. BMW"
             />
           </label>
           <button type="submit" className="btn primary">
-            Pretraži
+            Pretrazi
           </button>
         </form>
       </section>
@@ -138,43 +241,65 @@ const HomePage = () => {
       <section className="posts-section" id="posts-feed">
         <header className="section-header">
           <h3>Najnovije objave zajednice</h3>
-          <p>Pridruži se razgovoru i podeli svoje iskustvo.</p>
+          <p>Pridruzi se razgovoru i podeli svoje iskustvo.</p>
         </header>
         <div className="posts-grid">
           {posts.length === 0 && <p className="empty-state">Nema postova.</p>}
-          {posts.map((post) => (
-            <article key={post.id} className="post-card">
-              <div className="post-meta">
-                <span className="post-author">{post.user?.name || "Nepoznat korisnik"}</span>
-                <span className="post-car">
-                  {post.car?.make} {post.car?.model} ({post.car?.year})
-                </span>
-              </div>
-              <p className="post-content">
-                {post.content?.slice(0, 120)}
-                {post.content && post.content.length > 120 ? "..." : ""}
-              </p>
-              {post.images && post.images.length > 0 && (
-                <div className="post-media">
-                  <img src={post.images[0]} alt="Slika automobila" loading="lazy" />
+          {posts.map((post) => {
+            const likeCount = Number(post.likes_count ?? 0);
+            const liked = Boolean(post.liked_by_current_user);
+            const isPending = pendingLikes.includes(post.id);
+            const disableLike = !canLike || isPending;
+            const likeTitle = !canLike ? likeDisabledMessage : undefined;
+
+            return (
+              <article key={post.id} className="post-card">
+                <div className="post-meta">
+                  <span className="post-author">{post.user?.name || "Nepoznat korisnik"}</span>
+                  <span className="post-car">
+                    {post.car?.make} {post.car?.model} ({post.car?.year})
+                  </span>
                 </div>
-              )}
-              <button type="button" className="btn ghost" onClick={() => handleViewMore(post.id)}>
-                Više detalja
-              </button>
-            </article>
-          ))}
+                <p className="post-content">
+                  {post.content?.slice(0, 120)}
+                  {post.content && post.content.length > 120 ? "..." : ""}
+                </p>
+                {post.images && post.images.length > 0 && (
+                  <div className="post-media">
+                    <img src={post.images[0]} alt="Slika automobila" loading="lazy" />
+                  </div>
+                )}
+                <button type="button" className="btn ghost" onClick={() => handleViewMore(post.id)}>
+                  Vise detalja
+                </button>
+                <div className="post-like-bar">
+                  <button
+                    type="button"
+                    className={`btn link ${liked ? "active" : ""}`}
+                    onClick={() => handleToggleLike(post.id, liked)}
+                    disabled={disableLike}
+                    title={likeTitle}
+                  >
+                    {liked ? "Ukloni lajk" : "Svidja mi se"}
+                  </button>
+                  <span className="like-count">
+                    {likeCount} {likeCount === 1 ? "lajk" : "lajkova"}
+                  </span>
+                </div>
+              </article>
+            );
+          })}
         </div>
         {lastPage > 1 && (
           <div className="pagination">
-            {Array.from({ length: lastPage }, (_, i) => (
+            {Array.from({ length: lastPage }, (_, index) => (
               <button
-                key={i + 1}
+                key={index + 1}
                 type="button"
-                onClick={() => handlePageChange(i + 1)}
-                className={`page-btn ${currentPage === i + 1 ? "active" : ""}`}
+                onClick={() => handlePageChange(index + 1)}
+                className={`page-btn ${currentPage === index + 1 ? "active" : ""}`}
               >
-                {i + 1}
+                {index + 1}
               </button>
             ))}
           </div>
@@ -190,11 +315,11 @@ const HomePage = () => {
             disabled={newsLoading}
             className="btn primary"
           >
-            {newsLoading ? "Učitavanje..." : "Osveži"}
+            {newsLoading ? "Ucitavanje..." : "Osvezi"}
           </button>
         </div>
         {newsLoading ? (
-          <p className="info">Učitavanje vesti...</p>
+          <p className="info">Ucitavanje vesti...</p>
         ) : newsError ? (
           <p className="error">{newsError}</p>
         ) : news.length === 0 ? (
@@ -222,3 +347,4 @@ const HomePage = () => {
 };
 
 export default HomePage;
+

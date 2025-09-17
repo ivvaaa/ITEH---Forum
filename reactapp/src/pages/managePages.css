@@ -215,3 +215,8 @@
         align-items: flex-start;
     }
 }
+.my-post-like-count {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    color: var(--text-muted, #64748b);
+}

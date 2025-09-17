@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+﻿import React, { useEffect, useState, useCallback } from "react";
 import api from "../api/axios";
 import "./managePages.css";
 
@@ -153,6 +153,9 @@ const MyPostsPage = () => {
                                     </button>
                                 </div>
                                 <p className="my-post-content">{post.content}</p>
+                                <div className="my-post-like-count">
+                                    {Number(post.likes_count ?? 0)} {Number(post.likes_count ?? 0) === 1 ? "lajk" : "lajkova"}
+                                </div>
                                 {editingId === post.id && (
                                     <form className="edit-form" onSubmit={handleUpdate}>
                                         <label className="form-field">
@@ -201,3 +204,5 @@ const MyPostsPage = () => {
 };
 
 export default MyPostsPage;
+
+

@@ -549,3 +549,19 @@
 
 
 
+.post-like-bar {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.post-like-bar .btn.link.active {
+    color: var(--accent, #ef233c);
+}
+
+.post-like-bar .like-count {
+    font-size: 0.9rem;
+    color: var(--text-muted, #64748b);
+}

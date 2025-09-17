@@ -59,6 +59,9 @@ class PostResource extends JsonResource
             ->values()
             ->all();
 
+        $likesCount = isset($this->likes_count) ? (int) $this->likes_count : $this->likes()->count();
+        $likedByCurrentUser = (bool) ($this->liked_by_current_user ?? false);
+
         $comments = $this->whenLoaded('comments');
 
         return [
@@ -66,6 +69,8 @@ class PostResource extends JsonResource
             'content' => $this->content,
             'images' => $images,
             'other' => $this->other,
+            'likes_count' => $likesCount,
+            'liked_by_current_user' => $likedByCurrentUser,
             'user' => new UserResource($this->whenLoaded('user') ?? $this->user),
             'car' => new CarResource($this->whenLoaded('car') ?? $this->car),
             'comments' => $comments ? CommentResource::collection($comments) : [],
@@ -74,3 +79,4 @@ class PostResource extends JsonResource
         ];
     }
 }
+

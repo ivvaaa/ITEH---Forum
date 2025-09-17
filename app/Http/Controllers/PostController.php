@@ -19,7 +19,15 @@ class PostController extends Controller
     {
         $perPage = (int) $request->input('per_page', 7);
 
-        $query = Post::with(['user', 'car'])->latest();
+        $query = Post::with(['user', 'car'])
+            ->withCount('likes')
+            ->latest();
+
+        if ($request->user()) {
+            $query->withExists(['likedByUsers as liked_by_current_user' => function ($builder) use ($request) {
+                $builder->where('user_id', $request->user()->id);
+            }]);
+        }
 
         if ($request->boolean('mine')) {
             $userId = optional($request->user('sanctum'))->id ?? Auth::id();
@@ -99,7 +107,7 @@ class PostController extends Controller
     /**
      * Display the specified post.
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $post = Post::with([
             'user',
@@ -108,7 +116,15 @@ class PostController extends Controller
                 $query->orderBy('created_at');
             },
             'comments.user',
-        ])->findOrFail($id);
+        ])
+            ->withCount('likes')
+            ->findOrFail($id);
+
+        if ($request->user()) {
+            $post->loadExists(['likedByUsers as liked_by_current_user' => function ($builder) use ($request) {
+                $builder->where('user_id', $request->user()->id);
+            }]);
+        }
 
         return new PostResource($post);
     }
@@ -187,6 +203,11 @@ class PostController extends Controller
         return response()->json(['message' => 'Post and related comments deleted successfully.']);
     }
 }
+
+
+
+
+
 
 
 

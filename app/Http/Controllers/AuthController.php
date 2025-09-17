@@ -72,7 +72,7 @@ public function login(Request $request)
             'password' => 'required|string',
         ]);
 
-        // Pronalaženje korisnika po email-u
+        // PronalaÅ¾enje korisnika po email-u
         $user = User::where('email', $request->email)->first();
 
         // Provera da li postoji korisnik i da li je lozinka ispravna
@@ -115,7 +115,7 @@ public function login(Request $request)
     {
         $user = $request->user();
 
-        // Validacija ulaznih podataka, zabranjujući promenu email-a
+        // Validacija ulaznih podataka, zabranjujuÄ‡i promenu email-a
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'password' => 'nullable|string|min:8|confirmed',
@@ -129,23 +129,23 @@ public function login(Request $request)
             return response()->json($validator->errors(), 422);
         }
 
-        // Sačuvajte novu profilnu sliku ako je postavljena
+        // SaÄuvajte novu profilnu sliku ako je postavljena
         if ($request->hasFile('profile_photo')) {
             // Brisanje stare slike ako postoji
             if ($user->profile_photo) {
                 Storage::disk('public')->delete($user->profile_photo);
             }
-            // Sačuvajte novu sliku
+            // SaÄuvajte novu sliku
             $user->profile_photo = $request->file('profile_photo')->store('profile_photos', 'public');
         }
 
-        // Ažuriranje podataka korisnika
+        // AÅ¾uriranje podataka korisnika
         $user->name = $request->name;
         $user->interests = $request->interests;
         $user->bio = $request->bio;
         $user->birthdate = $request->birthdate;
 
-        // Ažuriranje lozinke ako je postavljena nova
+        // AÅ¾uriranje lozinke ako je postavljena nova
         if ($request->password) {
             $user->password = bcrypt($request->password);
         }

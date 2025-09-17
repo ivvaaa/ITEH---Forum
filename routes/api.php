@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
@@ -6,6 +6,7 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\CarController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\PasswordResetController;
+use App\Http\Controllers\PostLikeController;
 
 // Public auth
 Route::post('/register', [AuthController::class, 'register']);
@@ -33,6 +34,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::apiResource('posts', PostController::class)->except(['index', 'show']);
 
+    Route::post('/posts/{post}/like', [PostLikeController::class, 'store']);
+    Route::delete('/posts/{post}/like', [PostLikeController::class, 'destroy']);
+
 });
 
 // Admin-only
@@ -45,6 +49,11 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     //Route::apiResource('posts', PostController::class)->only(['index', 'show']);
 
 });
+
+
+
+
+
 
 
 

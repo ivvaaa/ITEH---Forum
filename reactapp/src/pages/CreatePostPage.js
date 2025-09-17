@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../api/axios";
 import { useNavigate } from "react-router-dom";
 
 
@@ -20,7 +20,6 @@ export default function CreatePostPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
-        const token = sessionStorage.getItem("auth_token") || localStorage.getItem("access_token");
         const formData = new FormData();
         formData.append("content", content);
         formData.append("car_make", carMake);
@@ -32,12 +31,7 @@ export default function CreatePostPage() {
         }
 
         try {
-            await axios.post("http://localhost:8000/api/posts", formData, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+            await api.post("/api/posts", formData);
             navigate("/"); // Vrati korisnika na početnu nakon uspešnog kreiranja
         } catch (err) {
             setError("Greška pri kreiranju posta.");
