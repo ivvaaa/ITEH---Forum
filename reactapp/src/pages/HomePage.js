@@ -1,8 +1,120 @@
-﻿import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import useAutoNews from "../api/hooks/useAutoNews";
 import "./homePage.css";
+
+
+const CATEGORY_ICONS = {
+  all: (props = {}) => (
+    <svg viewBox="0 0 24 24" fill="none" {...props}>
+      <circle cx="6" cy="8" r="2" fill="currentColor" />
+      <circle cx="12" cy="12" r="2" fill="currentColor" />
+      <circle cx="18" cy="16" r="2" fill="currentColor" />
+      <circle cx="6" cy="16" r="2" fill="currentColor" opacity="0.55" />
+      <circle cx="12" cy="8" r="2" fill="currentColor" opacity="0.55" />
+    </svg>
+  ),
+  elektricni_automobili: (props = {}) => (
+    <svg viewBox="0 0 24 24" fill="none" {...props}>
+      <path d="M13 2l-9 12h7v8l9-12h-7l0-8z" fill="currentColor" />
+    </svg>
+  ),
+  oldtajmeri: (props = {}) => (
+    <svg viewBox="0 0 24 24" fill="none" {...props}>
+      <path
+        d="M4 14h1.2l1.4-4.2A3 3 0 019.5 7h5a3 3 0 012.9 2.8L18.8 14H20a1 1 0 011 1v3h-2v2h-2v-2H7v2H5v-2H3v-3a1 1 0 011-1z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="8" cy="17.5" r="1.5" fill="currentColor" />
+      <circle cx="16" cy="17.5" r="1.5" fill="currentColor" />
+    </svg>
+  ),
+  sportski: (props = {}) => (
+    <svg viewBox="0 0 24 24" fill="none" {...props}>
+      <path d="M6 4v16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M6 4h11l-3 3 3 3-3 3 3 3H6" fill="currentColor" opacity="0.9" />
+    </svg>
+  ),
+  odrzavanje_i_popravka: (props = {}) => (
+    <svg viewBox="0 0 24 24" fill="none" {...props}>
+      <path
+        d="M21 7.5a4.5 4.5 0 01-6.6 4.04L9 16.94V21H7v-3.06L3.56 14.5l1.42-1.42L7 15.1l4.46-4.46A4.5 4.5 0 0117.5 3a4.5 4.5 0 013.5 2.06L18 8.06 15.94 6l2.9-2.9A4.5 4.5 0 0121 7.5z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  ),
+};
+
+const CATEGORY_FILTERS = [
+  { value: "all", label: "Sve teme", icon: "all" },
+  { value: "elektricni_automobili", label: "Elektricni automobili", icon: "elektricni_automobili" },
+  { value: "oldtajmeri", label: "Oldtajmeri", icon: "oldtajmeri" },
+  { value: "sportski", label: "Sportski", icon: "sportski" },
+  { value: "odrzavanje_i_popravka", label: "Odrzavanje i popravka", icon: "odrzavanje_i_popravka" },
+];
+
+const CATEGORY_LABELS = CATEGORY_FILTERS.filter((item) => item.value !== "all").reduce((acc, item) => {
+  acc[item.value] = item.label;
+  return acc;
+}, {});
+
+const CATEGORY_ORDER = CATEGORY_FILTERS.filter((item) => item.value !== "all").map((item) => item.value);
+const DEFAULT_CATEGORY = "all";
+
+const renderCategoryIcon = (key, props = {}) => {
+  const Icon = CATEGORY_ICONS[key];
+  return Icon ? <Icon {...props} /> : null;
+};
+
+
+const SearchIcon = (props = {}) => (
+  <svg viewBox="0 0 24 24" fill="none" {...props}>
+    <circle cx="11" cy="11" r="6" stroke="currentColor" strokeWidth="1.8" />
+    <line x1="15.5" y1="15.5" x2="20" y2="20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+  </svg>
+);
+
+const CarIcon = (props = {}) => (
+  <svg viewBox="0 0 24 24" fill="none" {...props}>
+    <path
+      d="M4 15h1.3l1.3-3.9A3 3 0 019.6 9h4.8a3 3 0 012.9 2.1L18.7 15H20a1 1 0 011 1v3h-2v2h-2v-2H7v2H5v-2H3v-3a1 1 0 011-1z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <circle cx="8" cy="17.5" r="1.5" fill="currentColor" />
+    <circle cx="16" cy="17.5" r="1.5" fill="currentColor" />
+  </svg>
+);
+
+const FilterIcon = (props = {}) => (
+  <svg viewBox="0 0 24 24" fill="none" {...props}>
+    <path d="M4 5h16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    <path d="M7 12h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    <path d="M10 19h4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+  </svg>
+);
+
+const HeartIcon = ({ filled = false, ...props } = {}) => (
+  <svg viewBox="0 0 24 24" fill="none" {...props}>
+    <path
+      d="M12 21s-6.2-4.35-9-7.74C-1.1 9 1.3 4.5 5.5 4.5a4.5 4.5 0 016.5 3.3A4.5 4.5 0 0118.5 4.5c4.2 0 6.6 4.5 2.5 8.76C18.2 16.65 12 21 12 21z"
+      fill={filled ? "currentColor" : "none"}
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
 
 const getStoredUser = () => {
   try {
@@ -52,6 +164,7 @@ const HomePage = () => {
   const [posts, setPosts] = useState([]);
   const [search, setSearch] = useState("");
   const [carMake, setCarMake] = useState("");
+  const [category, setCategory] = useState(DEFAULT_CATEGORY);
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [pendingLikes, setPendingLikes] = useState([]);
@@ -72,12 +185,55 @@ const HomePage = () => {
   };
 
   const POSTS_PER_PAGE = 5;
+  const categoryOrderMap = useMemo(() => {
+    const map = {};
+    CATEGORY_ORDER.forEach((value, index) => {
+      map[value] = index;
+    });
+    return map;
+  }, []);
 
-  const fetchPosts = async (query = "", carMakeValue = "", page = 1, perPage = POSTS_PER_PAGE) => {
+  const sortedPosts = useMemo(() => {
+    if (!posts || posts.length === 0) {
+      return [];
+    }
+
+    return [...posts].sort((first, second) => {
+      const rankA = categoryOrderMap[first?.category] ?? CATEGORY_ORDER.length;
+      const rankB = categoryOrderMap[second?.category] ?? CATEGORY_ORDER.length;
+
+      if (rankA !== rankB) {
+        return rankA - rankB;
+      }
+
+      const createdA = new Date(first?.created_at || 0).getTime();
+      const createdB = new Date(second?.created_at || 0).getTime();
+
+      return createdB - createdA;
+    });
+  }, [posts, categoryOrderMap]);
+
+
+  const fetchPosts = async ({
+    query = search,
+    carMakeValue = carMake,
+    categoryValue = category,
+    page = 1,
+    perPage = POSTS_PER_PAGE,
+  } = {}) => {
     try {
-      const res = await api.get("/api/posts", {
-        params: { search: query, car_make: carMakeValue, page, per_page: perPage },
-      });
+      const params = {
+        search: query,
+        car_make: carMakeValue,
+        page,
+        per_page: perPage,
+      };
+
+      if (categoryValue && categoryValue !== DEFAULT_CATEGORY) {
+        params.category = categoryValue;
+      }
+
+      const res = await api.get("/api/posts", { params });
       const payload = res.data || {};
       setPosts(payload.data || []);
       setCurrentPage(payload.meta?.current_page ?? 1);
@@ -95,7 +251,8 @@ const HomePage = () => {
   const handleReset = () => {
     setSearch("");
     setCarMake("");
-    fetchPosts("", "", 1);
+    setCategory(DEFAULT_CATEGORY);
+    fetchPosts({ query: "", carMakeValue: "", categoryValue: DEFAULT_CATEGORY, page: 1 });
   };
 
   useEffect(() => {
@@ -104,11 +261,16 @@ const HomePage = () => {
 
   const handleSearch = (event) => {
     event.preventDefault();
-    fetchPosts(search, carMake, 1);
+    fetchPosts({ query: search, carMakeValue: carMake, categoryValue: category, page: 1 });
   };
 
   const handlePageChange = (page) => {
-    fetchPosts(search, carMake, page);
+    fetchPosts({ query: search, carMakeValue: carMake, categoryValue: category, page });
+  };
+
+  const handleCategorySelect = (value) => {
+    setCategory(value);
+    fetchPosts({ query: search, carMakeValue: carMake, categoryValue: value, page: 1 });
   };
 
   const handleViewMore = (postId) => {
@@ -205,17 +367,40 @@ const HomePage = () => {
 
       <section className="search-panel" id="search-panel">
         <div className="panel-header">
-          <div>
+          <div className="panel-title">
             <h2>Pronadi savrsen automobil i ekipu</h2>
             <p>Filtriraj objave po marki ili potrazi omiljenog autora.</p>
           </div>
-          <button type="button" className="btn link" onClick={handleReset}>
-            Resetuj filtere
-          </button>
         </div>
         <form className="search-form" onSubmit={handleSearch}>
+          <div className="category-toolbar" role="group" aria-label="Filtriraj objave po temama">
+            <span className="toolbar-label">
+              <FilterIcon className="toolbar-icon" aria-hidden="true" />
+              Teme
+            </span>
+            <div className="category-pills">
+              {CATEGORY_FILTERS.map((option) => {
+                const isActive = category === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={`category-pill ${isActive ? "active" : ""}`}
+                    onClick={() => handleCategorySelect(option.value)}
+                    aria-pressed={isActive}
+                  >
+                    {renderCategoryIcon(option.icon ?? option.value, { className: "category-pill-icon", 'aria-hidden': true })}
+                    <span>{option.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <label className="field">
-            <span>Pretrazi postove, korisnike...</span>
+            <span className="field-label">
+              <SearchIcon className="field-icon" aria-hidden="true" />
+              Pretrazi postove, korisnike...
+            </span>
             <input
               type="text"
               value={search}
@@ -224,7 +409,10 @@ const HomePage = () => {
             />
           </label>
           <label className="field">
-            <span>Marka automobila</span>
+            <span className="field-label">
+              <CarIcon className="field-icon" aria-hidden="true" />
+              Marka automobila
+            </span>
             <input
               type="text"
               value={carMake}
@@ -232,9 +420,14 @@ const HomePage = () => {
               placeholder="npr. BMW"
             />
           </label>
-          <button type="submit" className="btn primary">
-            Pretrazi
-          </button>
+          <div className="form-actions">
+            <button type="submit" className="btn primary">
+              Pretrazi
+            </button>
+            <button type="button" className="btn ghost" onClick={handleReset}>
+              Resetuj
+            </button>
+          </div>
         </form>
       </section>
 
@@ -244,13 +437,14 @@ const HomePage = () => {
           <p>Pridruzi se razgovoru i podeli svoje iskustvo.</p>
         </header>
         <div className="posts-grid">
-          {posts.length === 0 && <p className="empty-state">Nema postova.</p>}
-          {posts.map((post) => {
+          {sortedPosts.length === 0 && <p className="empty-state">Nema postova.</p>}
+          {sortedPosts.map((post) => {
             const likeCount = Number(post.likes_count ?? 0);
             const liked = Boolean(post.liked_by_current_user);
             const isPending = pendingLikes.includes(post.id);
             const disableLike = !canLike || isPending;
             const likeTitle = !canLike ? likeDisabledMessage : undefined;
+            const themeLabel = CATEGORY_LABELS[post.category] || 'Nepoznata tema';
 
             return (
               <article key={post.id} className="post-card">
@@ -259,6 +453,7 @@ const HomePage = () => {
                   <span className="post-car">
                     {post.car?.make} {post.car?.model} ({post.car?.year})
                   </span>
+                  <span className="post-category">{themeLabel}</span>
                 </div>
                 <p className="post-content">
                   {post.content?.slice(0, 120)}
@@ -275,16 +470,16 @@ const HomePage = () => {
                 <div className="post-like-bar">
                   <button
                     type="button"
-                    className={`btn link ${liked ? "active" : ""}`}
+                    className={`like-heart ${liked ? "active" : ""}`}
                     onClick={() => handleToggleLike(post.id, liked)}
                     disabled={disableLike}
                     title={likeTitle}
+                    aria-pressed={liked}
+                    aria-label={liked ? "Ukloni lajk" : "Svidja mi se"}
                   >
-                    {liked ? "Ukloni lajk" : "Svidja mi se"}
+                    <HeartIcon filled={liked} className="heart-icon" aria-hidden="true" />
                   </button>
-                  <span className="like-count">
-                    {likeCount} {likeCount === 1 ? "lajk" : "lajkova"}
-                  </span>
+                  <span className="like-count">{likeCount}</span>
                 </div>
               </article>
             );

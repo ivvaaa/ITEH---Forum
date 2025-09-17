@@ -69,6 +69,7 @@ class PostResource extends JsonResource
             'content' => $this->content,
             'images' => $images,
             'other' => $this->other,
+            'category' => $this->category,
             'likes_count' => $likesCount,
             'liked_by_current_user' => $likedByCurrentUser,
             'user' => new UserResource($this->whenLoaded('user') ?? $this->user),

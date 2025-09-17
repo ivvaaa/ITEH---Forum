@@ -3,6 +3,20 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./authPages.css";
 
+const EyeIcon = ({ crossed = false, ...props } = {}) => (
+  <svg viewBox="0 0 24 24" fill="none" {...props}>
+    <path
+      d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.6" />
+    {crossed ? <line x1="4" y1="4" x2="20" y2="20" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /> : null}
+  </svg>
+);
+
 const Register = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -99,8 +113,13 @@ const Register = () => {
                 placeholder="Odaberite lozinku"
                 required
               />
-              <button type="button" className="auth-toggle" onClick={toggleShowPassword}>
-                {showPassword ? "Sakrij" : "Prikazi"}
+              <button
+                type="button"
+                className="auth-toggle"
+                onClick={toggleShowPassword}
+                aria-label={showPassword ? "Sakrij lozinku" : "Prikazi lozinku"}
+              >
+                <EyeIcon crossed={showPassword} className="auth-toggle-icon" aria-hidden="true" />
               </button>
             </div>
           </label>

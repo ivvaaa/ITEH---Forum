@@ -3,11 +3,19 @@ import api from "../api/axios";
 import { useNavigate } from "react-router-dom";
 
 
+const CATEGORY_OPTIONS = [
+    { value: "elektricni_automobili", label: "Elektricni automobili" },
+    { value: "oldtajmeri", label: "Oldtajmeri" },
+    { value: "sportski", label: "Sportski" },
+    { value: "odrzavanje_i_popravka", label: "Odrzavanje i popravka" },
+];
+
 export default function CreatePostPage() {
     const [content, setContent] = useState("");
     const [carMake, setCarMake] = useState("");
     const [carModel, setCarModel] = useState("");
     const [carYear, setCarYear] = useState("");
+    const [category, setCategory] = useState(CATEGORY_OPTIONS[0].value);
     const [images, setImages] = useState([]);
     const [other, setOther] = useState("");
     const [error, setError] = useState("");
@@ -25,6 +33,7 @@ export default function CreatePostPage() {
         formData.append("car_make", carMake);
         formData.append("car_model", carModel);
         formData.append("car_year", carYear);
+        formData.append("category", category);
         formData.append("other", other);
         for (let i = 0; i < images.length; i++) {
             formData.append("images[]", images[i]);
@@ -88,6 +97,16 @@ export default function CreatePostPage() {
                                 placeholder="npr. 2012"
                             />
                         </div>
+                    </div>
+                    <div className="form-field">
+                        <span>Tema</span>
+                        <select value={category} onChange={e => setCategory(e.target.value)} required>
+                            {CATEGORY_OPTIONS.map(option => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
+                        </select>
                     </div>
                     <div className="form-field">
                         <span>Slike (opciono)</span>
