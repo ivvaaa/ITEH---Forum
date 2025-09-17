@@ -1,9 +1,24 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import useAutoNews from "../api/hooks/useAutoNews";
 import "./homePage.css";
 
+const CATEGORY_FILTERS = [
+  { value: "all", label: "Sve teme", icon: "all" },
+  { value: "elektricni_automobili", label: "Elektricni automobili", icon: "elektricni_automobili" },
+  { value: "oldtajmeri", label: "Oldtajmeri", icon: "oldtajmeri" },
+  { value: "sportski", label: "Sportski", icon: "sportski" },
+  { value: "odrzavanje_i_popravka", label: "Odrzavanje i popravka", icon: "odrzavanje_i_popravka" },
+];
+
+const CATEGORY_LABELS = CATEGORY_FILTERS.filter((item) => item.value !== "all").reduce((acc, item) => {
+  acc[item.value] = item.label;
+  return acc;
+}, {});
+
+const CATEGORY_ORDER = CATEGORY_FILTERS.filter((item) => item.value !== "all").map((item) => item.value);
+const DEFAULT_CATEGORY = "all";
 
 const CATEGORY_ICONS = {
   all: (props = {}) => (
@@ -17,7 +32,7 @@ const CATEGORY_ICONS = {
   ),
   elektricni_automobili: (props = {}) => (
     <svg viewBox="0 0 24 24" fill="none" {...props}>
-      <path d="M13 2l-9 12h7v8l9-12h-7l0-8z" fill="currentColor" />
+      <path d="M13 2l-9 12h7v8l9-12h-7V2z" fill="currentColor" />
     </svg>
   ),
   oldtajmeri: (props = {}) => (
@@ -52,21 +67,6 @@ const CATEGORY_ICONS = {
   ),
 };
 
-const CATEGORY_FILTERS = [
-  { value: "all", label: "Sve teme", icon: "all" },
-  { value: "elektricni_automobili", label: "Elektricni automobili", icon: "elektricni_automobili" },
-  { value: "oldtajmeri", label: "Oldtajmeri", icon: "oldtajmeri" },
-  { value: "sportski", label: "Sportski", icon: "sportski" },
-  { value: "odrzavanje_i_popravka", label: "Odrzavanje i popravka", icon: "odrzavanje_i_popravka" },
-];
-
-const CATEGORY_LABELS = CATEGORY_FILTERS.filter((item) => item.value !== "all").reduce((acc, item) => {
-  acc[item.value] = item.label;
-  return acc;
-}, {});
-
-const CATEGORY_ORDER = CATEGORY_FILTERS.filter((item) => item.value !== "all").map((item) => item.value);
-const DEFAULT_CATEGORY = "all";
 
 const renderCategoryIcon = (key, props = {}) => {
   const Icon = CATEGORY_ICONS[key];
@@ -116,55 +116,23 @@ const HeartIcon = ({ filled = false, ...props } = {}) => (
   </svg>
 );
 
-const getStoredUser = () => {
-  try {
-    return (
-      JSON.parse(sessionStorage.getItem("user")) ||
-      JSON.parse(localStorage.getItem("user")) ||
-      null
-    );
-  } catch (error) {
-    return null;
+const normalizePostCategories = (value) => {
+  if (Array.isArray(value)) {
+    return value;
   }
-};
 
-const resolveRoleId = (user) => {
-  const storedRole = sessionStorage.getItem("role_id");
-  if (storedRole) {
-    const parsed = Number(storedRole);
-    if (!Number.isNaN(parsed)) {
-      return parsed;
-    }
+  if (typeof value === "string" && value.trim() !== "") {
+    return [value.trim()];
   }
-  if (user?.role_id != null) {
-    const parsed = Number(user.role_id);
-    if (!Number.isNaN(parsed)) {
-      return parsed;
-    }
-  }
-  if (user?.role?.id != null) {
-    const parsed = Number(user.role.id);
-    if (!Number.isNaN(parsed)) {
-      return parsed;
-    }
-  }
-  return null;
-};
 
-const getAuthToken = () => {
-  return (
-    sessionStorage.getItem("auth_token") ||
-    localStorage.getItem("access_token") ||
-    localStorage.getItem("token") ||
-    null
-  );
+  return [];
 };
 
 const HomePage = () => {
   const [posts, setPosts] = useState([]);
   const [search, setSearch] = useState("");
   const [carMake, setCarMake] = useState("");
-  const [category, setCategory] = useState(DEFAULT_CATEGORY);
+  const [selectedCategories, setSelectedCategories] = useState([DEFAULT_CATEGORY]);
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [pendingLikes, setPendingLikes] = useState([]);
@@ -185,6 +153,7 @@ const HomePage = () => {
   };
 
   const POSTS_PER_PAGE = 5;
+
   const categoryOrderMap = useMemo(() => {
     const map = {};
     CATEGORY_ORDER.forEach((value, index) => {
@@ -193,31 +162,10 @@ const HomePage = () => {
     return map;
   }, []);
 
-  const sortedPosts = useMemo(() => {
-    if (!posts || posts.length === 0) {
-      return [];
-    }
-
-    return [...posts].sort((first, second) => {
-      const rankA = categoryOrderMap[first?.category] ?? CATEGORY_ORDER.length;
-      const rankB = categoryOrderMap[second?.category] ?? CATEGORY_ORDER.length;
-
-      if (rankA !== rankB) {
-        return rankA - rankB;
-      }
-
-      const createdA = new Date(first?.created_at || 0).getTime();
-      const createdB = new Date(second?.created_at || 0).getTime();
-
-      return createdB - createdA;
-    });
-  }, [posts, categoryOrderMap]);
-
-
   const fetchPosts = async ({
     query = search,
     carMakeValue = carMake,
-    categoryValue = category,
+    categoriesValue = selectedCategories,
     page = 1,
     perPage = POSTS_PER_PAGE,
   } = {}) => {
@@ -229,8 +177,11 @@ const HomePage = () => {
         per_page: perPage,
       };
 
-      if (categoryValue && categoryValue !== DEFAULT_CATEGORY) {
-        params.category = categoryValue;
+      const normalizedCategories = Array.isArray(categoriesValue) ? categoriesValue : [categoriesValue];
+      const filteredCategories = normalizedCategories.filter((item) => item && item !== DEFAULT_CATEGORY);
+
+      if (filteredCategories.length > 0) {
+        params.categories = filteredCategories;
       }
 
       const res = await api.get("/api/posts", { params });
@@ -248,29 +199,88 @@ const HomePage = () => {
     }
   };
 
+  const computeCategoryRank = (values) => {
+    const normalized = normalizePostCategories(values);
+    if (normalized.length === 0) {
+      return CATEGORY_ORDER.length;
+    }
+
+    return normalized.reduce((rank, value) => {
+      const candidate = categoryOrderMap[value] ?? CATEGORY_ORDER.length;
+      return candidate < rank ? candidate : rank;
+    }, CATEGORY_ORDER.length);
+  };
+
+  const sortedPosts = useMemo(() => {
+    if (!posts || posts.length === 0) {
+      return [];
+    }
+
+    return [...posts].sort((first, second) => {
+      const rankA = computeCategoryRank(first.categories ?? first.category);
+      const rankB = computeCategoryRank(second.categories ?? second.category);
+
+      if (rankA !== rankB) {
+        return rankA - rankB;
+      }
+
+      const createdA = new Date(first?.created_at || 0).getTime();
+      const createdB = new Date(second?.created_at || 0).getTime();
+
+      return createdB - createdA;
+    });
+  }, [posts, categoryOrderMap]);
+
   const handleReset = () => {
     setSearch("");
     setCarMake("");
-    setCategory(DEFAULT_CATEGORY);
-    fetchPosts({ query: "", carMakeValue: "", categoryValue: DEFAULT_CATEGORY, page: 1 });
+    setSelectedCategories([DEFAULT_CATEGORY]);
+    setCurrentPage(1);
+    fetchPosts({ query: "", carMakeValue: "", categoriesValue: [DEFAULT_CATEGORY], page: 1 });
   };
 
   useEffect(() => {
     fetchPosts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSearch = (event) => {
     event.preventDefault();
-    fetchPosts({ query: search, carMakeValue: carMake, categoryValue: category, page: 1 });
+    setCurrentPage(1);
+    fetchPosts({ query: search, carMakeValue: carMake, categoriesValue: selectedCategories, page: 1 });
   };
 
   const handlePageChange = (page) => {
-    fetchPosts({ query: search, carMakeValue: carMake, categoryValue: category, page });
+    setCurrentPage(page);
+    fetchPosts({ query: search, carMakeValue: carMake, categoriesValue: selectedCategories, page });
   };
 
-  const handleCategorySelect = (value) => {
-    setCategory(value);
-    fetchPosts({ query: search, carMakeValue: carMake, categoryValue: value, page: 1 });
+  const handleCategoryToggle = (value) => {
+    setSelectedCategories((prev) => {
+      if (value === DEFAULT_CATEGORY) {
+        const nextCategories = [DEFAULT_CATEGORY];
+        setCurrentPage(1);
+        fetchPosts({ query: search, carMakeValue: carMake, categoriesValue: nextCategories, page: 1 });
+        return nextCategories;
+      }
+
+      const filtered = prev.filter((item) => item !== DEFAULT_CATEGORY);
+      let next;
+
+      if (filtered.includes(value)) {
+        next = filtered.filter((item) => item !== value);
+      } else {
+        next = [...filtered, value];
+      }
+
+      if (next.length === 0) {
+        next = [DEFAULT_CATEGORY];
+      }
+
+      setCurrentPage(1);
+      fetchPosts({ query: search, carMakeValue: carMake, categoriesValue: next, page: 1 });
+      return next;
+    });
   };
 
   const handleViewMore = (postId) => {
@@ -288,8 +298,8 @@ const HomePage = () => {
     }
   };
 
-  const scrollToSearch = () => scrollToSection("search-panel");
-  const scrollToPosts = () => scrollToSection("posts-feed");
+  const scrollToFilters = () => scrollToSection("community-feed");
+  const scrollToPosts = () => scrollToSection("community-feed");
   const scrollToNews = () => scrollToSection("news-section");
 
   const handleToggleLike = async (postId, currentlyLiked) => {
@@ -354,6 +364,22 @@ const HomePage = () => {
               <span>NEED FOR</span>
               <span className="stroke">SPEED</span>
             </h1>
+            <div className="hero-actions">
+              <button type="button" onClick={handleCreatePost} className="btn primary">
+                Kreiraj objavu
+              </button>
+              <div className="hero-nav">
+                <button type="button" onClick={scrollToFilters}>
+                  Filteri
+                </button>
+                <button type="button" onClick={scrollToPosts}>
+                  Objave
+                </button>
+                <button type="button" onClick={scrollToNews}>
+                  Vesti
+                </button>
+              </div>
+            </div>
           </div>
           <div className="hero-visual" aria-hidden="true">
             <img
@@ -365,14 +391,18 @@ const HomePage = () => {
         </div>
       </section>
 
-      <section className="search-panel" id="search-panel">
-        <div className="panel-header">
-          <div className="panel-title">
+      <section className="feed-section" id="community-feed">
+        <div className="feed-header">
+          <div className="feed-title">
             <h2>Pronadi savrsen automobil i ekipu</h2>
-            <p>Filtriraj objave po marki ili potrazi omiljenog autora.</p>
+            <p>Filtriraj objave po temi, marki ili potrazi omiljenog autora.</p>
           </div>
+          <button type="button" className="btn link" onClick={handleReset}>
+            Resetuj filtere
+          </button>
         </div>
-        <form className="search-form" onSubmit={handleSearch}>
+
+        <form className="feed-filter-form" onSubmit={handleSearch}>
           <div className="category-toolbar" role="group" aria-label="Filtriraj objave po temama">
             <span className="toolbar-label">
               <FilterIcon className="toolbar-icon" aria-hidden="true" />
@@ -380,47 +410,51 @@ const HomePage = () => {
             </span>
             <div className="category-pills">
               {CATEGORY_FILTERS.map((option) => {
-                const isActive = category === option.value;
+                const isActive = selectedCategories.includes(option.value);
                 return (
                   <button
                     key={option.value}
                     type="button"
                     className={`category-pill ${isActive ? "active" : ""}`}
-                    onClick={() => handleCategorySelect(option.value)}
+                    onClick={() => handleCategoryToggle(option.value)}
                     aria-pressed={isActive}
                   >
-                    {renderCategoryIcon(option.icon ?? option.value, { className: "category-pill-icon", 'aria-hidden': true })}
+                    {renderCategoryIcon(option.icon ?? option.value, { className: "category-pill-icon", "aria-hidden": true })}
                     <span>{option.label}</span>
                   </button>
                 );
               })}
             </div>
           </div>
-          <label className="field">
-            <span className="field-label">
-              <SearchIcon className="field-icon" aria-hidden="true" />
-              Pretrazi postove, korisnike...
-            </span>
-            <input
-              type="text"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Unesi kljucnu rec"
-            />
-          </label>
-          <label className="field">
-            <span className="field-label">
-              <CarIcon className="field-icon" aria-hidden="true" />
-              Marka automobila
-            </span>
-            <input
-              type="text"
-              value={carMake}
-              onChange={(event) => setCarMake(event.target.value)}
-              placeholder="npr. BMW"
-            />
-          </label>
-          <div className="form-actions">
+
+          <div className="filter-grid">
+            <label className="field">
+              <span className="field-label">
+                <SearchIcon className="field-icon" aria-hidden="true" />
+                Pretrazi postove, korisnike...
+              </span>
+              <input
+                type="text"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Unesi kljucnu rec"
+              />
+            </label>
+            <label className="field">
+              <span className="field-label">
+                <CarIcon className="field-icon" aria-hidden="true" />
+                Marka automobila
+              </span>
+              <input
+                type="text"
+                value={carMake}
+                onChange={(event) => setCarMake(event.target.value)}
+                placeholder="npr. BMW"
+              />
+            </label>
+          </div>
+
+          <div className="form-actions feed">
             <button type="submit" className="btn primary">
               Pretrazi
             </button>
@@ -429,76 +463,88 @@ const HomePage = () => {
             </button>
           </div>
         </form>
-      </section>
 
-      <section className="posts-section" id="posts-feed">
-        <header className="section-header">
-          <h3>Najnovije objave zajednice</h3>
-          <p>Pridruzi se razgovoru i podeli svoje iskustvo.</p>
-        </header>
-        <div className="posts-grid">
-          {sortedPosts.length === 0 && <p className="empty-state">Nema postova.</p>}
-          {sortedPosts.map((post) => {
-            const likeCount = Number(post.likes_count ?? 0);
-            const liked = Boolean(post.liked_by_current_user);
-            const isPending = pendingLikes.includes(post.id);
-            const disableLike = !canLike || isPending;
-            const likeTitle = !canLike ? likeDisabledMessage : undefined;
-            const themeLabel = CATEGORY_LABELS[post.category] || 'Nepoznata tema';
+        <div className="feed-posts">
+          <header className="feed-subheader">
+            <h3>Najnovije objave zajednice</h3>
+            <p>Pridruzi se razgovoru i podeli svoje iskustvo.</p>
+          </header>
+          <div className="posts-grid">
+            {sortedPosts.length === 0 && <p className="empty-state">Nema postova.</p>}
+            {sortedPosts.map((post) => {
+              const likeCount = Number(post.likes_count ?? 0);
+              const liked = Boolean(post.liked_by_current_user);
+              const isPending = pendingLikes.includes(post.id);
+              const disableLike = !canLike || isPending;
+              const likeTitle = !canLike ? likeDisabledMessage : undefined;
+              const categoryValues = normalizePostCategories(post.categories ?? post.category);
 
-            return (
-              <article key={post.id} className="post-card">
-                <div className="post-meta">
-                  <span className="post-author">{post.user?.name || "Nepoznat korisnik"}</span>
-                  <span className="post-car">
-                    {post.car?.make} {post.car?.model} ({post.car?.year})
-                  </span>
-                  <span className="post-category">{themeLabel}</span>
-                </div>
-                <p className="post-content">
-                  {post.content?.slice(0, 120)}
-                  {post.content && post.content.length > 120 ? "..." : ""}
-                </p>
-                {post.images && post.images.length > 0 && (
-                  <div className="post-media">
-                    <img src={post.images[0]} alt="Slika automobila" loading="lazy" />
+              return (
+                <article key={post.id} className="post-card">
+                  <div className="post-meta">
+                    <span className="post-author">{post.user?.name || "Nepoznat korisnik"}</span>
+                    <span className="post-car">
+                      {post.car?.make} {post.car?.model} ({post.car?.year})
+                    </span>
                   </div>
-                )}
-                <button type="button" className="btn ghost" onClick={() => handleViewMore(post.id)}>
-                  Vise detalja
-                </button>
-                <div className="post-like-bar">
-                  <button
-                    type="button"
-                    className={`like-heart ${liked ? "active" : ""}`}
-                    onClick={() => handleToggleLike(post.id, liked)}
-                    disabled={disableLike}
-                    title={likeTitle}
-                    aria-pressed={liked}
-                    aria-label={liked ? "Ukloni lajk" : "Svidja mi se"}
-                  >
-                    <HeartIcon filled={liked} className="heart-icon" aria-hidden="true" />
-                  </button>
-                  <span className="like-count">{likeCount}</span>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-        {lastPage > 1 && (
-          <div className="pagination">
-            {Array.from({ length: lastPage }, (_, index) => (
-              <button
-                key={index + 1}
-                type="button"
-                onClick={() => handlePageChange(index + 1)}
-                className={`page-btn ${currentPage === index + 1 ? "active" : ""}`}
-              >
-                {index + 1}
-              </button>
-            ))}
+                  <div className="post-tags">
+                    {categoryValues.length === 0 ? (
+                      <span className="post-tag">Bez teme</span>
+                    ) : (
+                      categoryValues.map((value) => (
+                        <span key={value} className="post-tag">
+                          {CATEGORY_LABELS[value] || value}
+                        </span>
+                      ))
+                    )}
+                  </div>
+                  <p className="post-content">
+                    {post.content?.slice(0, 220)}
+                    {post.content && post.content.length > 220 ? "..." : ""}
+                  </p>
+                  {post.images && post.images.length > 0 && (
+                    <div className="post-media">
+                      <img src={post.images[0]} alt="Slika automobila" loading="lazy" />
+                    </div>
+                  )}
+                  <div className="post-actions">
+                    <button type="button" className="post-details-btn" onClick={() => handleViewMore(post.id)}>
+                      Vise detalja
+                    </button>
+                    <div className="post-like-bar">
+                      <button
+                        type="button"
+                        className={`like-heart ${liked ? "active" : ""}`}
+                        onClick={() => handleToggleLike(post.id, liked)}
+                        disabled={disableLike}
+                        title={likeTitle}
+                        aria-pressed={liked}
+                        aria-label={liked ? "Ukloni lajk" : "Svidja mi se"}
+                      >
+                        <HeartIcon filled={liked} className="heart-icon" aria-hidden="true" />
+                      </button>
+                      <span className="like-count">{likeCount}</span>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
           </div>
-        )}
+          {lastPage > 1 && (
+            <div className="pagination">
+              {Array.from({ length: lastPage }, (_, index) => (
+                <button
+                  key={index + 1}
+                  type="button"
+                  onClick={() => handlePageChange(index + 1)}
+                  className={`page-btn ${currentPage === index + 1 ? "active" : ""}`}
+                >
+                  {index + 1}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </section>
 
       <section className="news-section" id="news-section">
@@ -541,5 +587,51 @@ const HomePage = () => {
   );
 };
 
+const getStoredUser = () => {
+  try {
+    return (
+      JSON.parse(sessionStorage.getItem("user")) ||
+      JSON.parse(localStorage.getItem("user")) ||
+      null
+    );
+  } catch (error) {
+    return null;
+  }
+};
+
+const resolveRoleId = (user) => {
+  const storedRole = sessionStorage.getItem("role_id");
+  if (storedRole) {
+    const parsed = Number(storedRole);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  if (user?.role_id != null) {
+    const parsed = Number(user.role_id);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  if (user?.role?.id != null) {
+    const parsed = Number(user.role.id);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  return null;
+};
+
+const getAuthToken = () => {
+  return (
+    sessionStorage.getItem("auth_token") ||
+    localStorage.getItem("access_token") ||
+    localStorage.getItem("token") ||
+    null
+  );
+};
+
 export default HomePage;
+
+
 

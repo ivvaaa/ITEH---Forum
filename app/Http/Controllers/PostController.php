@@ -59,8 +59,16 @@ class PostController extends Controller
             });
         }
 
-        if ($request->filled('category')) {
-            $query->where('category', $request->input('category'));
+        $filterCategories = $this->normalizeCategories(
+            $request->input('categories', $request->input('category'))
+        );
+
+        if (!empty($filterCategories)) {
+            $query->where(function ($builder) use ($filterCategories) {
+                foreach ($filterCategories as $category) {
+                    $builder->orWhereJsonContains('categories', $category);
+                }
+            });
         }
 
         $query->orderByRaw($this->buildCategoryOrderCase())
@@ -74,20 +82,45 @@ class PostController extends Controller
         $cases = [];
 
         foreach (Post::CATEGORY_OPTIONS as $index => $value) {
-            $cases[] = "WHEN '" . $value . "' THEN " . $index;
+            $cases[] = "WHEN JSON_CONTAINS(categories, '\"{$value}\"') THEN {$index}";
         }
 
-        return 'CASE category ' . implode(' ', $cases) . ' ELSE ' . count(Post::CATEGORY_OPTIONS) . ' END';
+        return 'CASE ' . implode(' ', $cases) . ' ELSE ' . count(Post::CATEGORY_OPTIONS) . ' END';
+    }
+
+    private function normalizeCategories($input): array
+    {
+        if (is_null($input)) {
+            return [];
+        }
+
+        if (!is_array($input)) {
+            $input = explode(',', (string) $input);
+        }
+
+        return collect($input)
+            ->map(fn ($value) => is_string($value) ? trim($value) : null)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
     }
 
     public function store(Request $request)
     {
+        $request->merge([
+            'categories' => $this->normalizeCategories(
+                $request->input('categories', $request->input('category'))
+            ),
+        ]);
+
         $validator = Validator::make($request->all(), [
             'content' => 'required|string',
             'car_make' => 'required|string|max:255',
             'car_model' => 'required|string|max:255',
             'car_year' => 'required|integer|between:1900,2099',
-            'category' => ['required', Rule::in(Post::CATEGORY_OPTIONS)],
+            'categories' => ['required', 'array', 'min:1'],
+            'categories.*' => ['string', Rule::in(Post::CATEGORY_OPTIONS)],
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'other' => 'nullable|string',
@@ -119,7 +152,7 @@ class PostController extends Controller
             'car_id' => $car->id,
             'images' => $imagePaths,
             'other' => $request->other,
-            'category' => $request->category,
+            'categories' => $request->input('categories'),
         ]);
 
         return new PostResource($post);
@@ -155,12 +188,22 @@ class PostController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $incomingCategories = null;
+
+        if ($request->has('categories') || $request->has('category')) {
+            $incomingCategories = $this->normalizeCategories(
+                $request->input('categories', $request->input('category'))
+            );
+            $request->merge(['categories' => $incomingCategories]);
+        }
+
         $validator = Validator::make($request->all(), [
             'content' => 'sometimes|required|string',
             'car_make' => 'sometimes|required|string|max:255',
             'car_model' => 'sometimes|required|string|max:255',
             'car_year' => 'sometimes|required|integer|between:1900,2099',
-            'category' => ['sometimes', 'required', Rule::in(Post::CATEGORY_OPTIONS)],
+            'categories' => ['sometimes', 'required', 'array', 'min:1'],
+            'categories.*' => ['string', Rule::in(Post::CATEGORY_OPTIONS)],
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'other' => 'nullable|string',
@@ -191,7 +234,7 @@ class PostController extends Controller
             'content' => $request->input('content', $post->content),
             'images' => $imagePaths,
             'other' => $request->input('other', $post->other),
-            'category' => $request->input('category', $post->category),
+            'categories' => $incomingCategories ?? ($post->categories ?? []),
         ]);
 
         if ($post->car) {
@@ -226,12 +269,3 @@ class PostController extends Controller
         return response()->json(['message' => 'Post and related comments deleted successfully.']);
     }
 }
-
-
-
-
-
-
-
-
-

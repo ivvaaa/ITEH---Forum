@@ -22,12 +22,12 @@ class Post extends Model
         'car_id',
         'images',
         'other',
-        'category',
+        'categories',
     ];
 
     protected $casts = [
         'images' => 'array',
-        'category' => 'string',
+        'categories' => 'array',
     ];
 
     public function user()

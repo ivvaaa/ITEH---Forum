@@ -44,12 +44,6 @@ export default function Navbar({ isLoggedIn, setIsLoggedIn, roleId }) {
           CARTEH<span>FORUM</span>
         </Link>
 
-        <nav className="navbar-center">
-          <NavLink to="/" className={navLinkClass}>
-            Pocetna
-          </NavLink>
-        </nav>
-
         <div className="nav-actions">
           {isLoggedIn ? (
             <>

@@ -59,6 +59,21 @@ class PostResource extends JsonResource
             ->values()
             ->all();
 
+        $rawCategories = $this->categories ?? $this->category ?? [];
+
+        if (is_string($rawCategories)) {
+            $decoded = json_decode($rawCategories, true);
+            $rawCategories = json_last_error() === JSON_ERROR_NONE ? $decoded : [$rawCategories];
+        }
+
+        $categories = collect(is_array($rawCategories) ? $rawCategories : [])
+            ->filter()
+            ->map(fn ($value) => is_string($value) ? trim($value) : null)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
         $likesCount = isset($this->likes_count) ? (int) $this->likes_count : $this->likes()->count();
         $likedByCurrentUser = (bool) ($this->liked_by_current_user ?? false);
 
@@ -69,7 +84,8 @@ class PostResource extends JsonResource
             'content' => $this->content,
             'images' => $images,
             'other' => $this->other,
-            'category' => $this->category,
+            'categories' => $categories,
+            'category' => $categories[0] ?? null,
             'likes_count' => $likesCount,
             'liked_by_current_user' => $likedByCurrentUser,
             'user' => new UserResource($this->whenLoaded('user') ?? $this->user),
@@ -80,4 +96,3 @@ class PostResource extends JsonResource
         ];
     }
 }
-
