@@ -1,0 +1,222 @@
+﻿@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap");
+
+:root {
+    --bg-dark: #070708;
+    --bg-darker: #050506;
+    --panel-bg: rgba(18, 19, 22, 0.92);
+    --panel-border: rgba(120, 124, 133, 0.18);
+    --text-primary: #f5f5f6;
+    --text-muted: rgba(209, 213, 219, 0.72);
+    --accent: #ef233c;
+    --accent-dark: #b11226;
+}
+
+.page-shell {
+    min-height: calc(100vh - 140px);
+    background: radial-gradient(circle at 20% 0%, #565656 0%, var(--bg-dark) 55%, var(--bg-darker) 100%);
+    padding: 64px clamp(20px, 8vw, 120px) 96px;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    font-family: "Montserrat", "Segoe UI", system-ui, -apple-system, sans-serif;
+    color: var(--text-primary);
+}
+
+.page-card {
+    width: 100%;
+    max-width: 1080px;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 30px;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.45);
+    padding: 48px clamp(24px, 5vw, 64px);
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.page-card.narrow {
+    max-width: 640px;
+}
+
+.page-header {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.page-header h1 {
+    margin: 0;
+    font-size: clamp(2.1rem, 4vw, 2.6rem);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.page-header p {
+    margin: 0;
+    color: var(--text-muted);
+    max-width: 580px;
+    line-height: 1.6;
+}
+
+.form-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.form-field span {
+    font-size: 0.9rem;
+    color: rgba(209, 213, 219, 0.78);
+    letter-spacing: 0.05em;
+}
+
+.form-field input,
+.form-field textarea,
+.form-field select {
+    background: rgba(13, 13, 16, 0.95);
+    border: 1px solid rgba(120, 124, 133, 0.28);
+    border-radius: 16px;
+    padding: 12px 18px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-field textarea {
+    min-height: 140px;
+    resize: vertical;
+}
+
+.form-field input:focus,
+.form-field textarea:focus,
+.form-field select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(239, 35, 60, 0.18);
+}
+
+.field-row {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+}
+
+.field-row .form-field {
+    flex: 1;
+    min-width: 180px;
+}
+
+.field-row .form-field.small {
+    max-width: 160px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.alert {
+    padding: 16px 18px;
+    border-radius: 16px;
+    background: rgba(239, 35, 60, 0.12);
+    border: 1px solid rgba(239, 35, 60, 0.35);
+    color: #fca5a5;
+    font-size: 0.9rem;
+}
+
+.posts-collection {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.my-post-card {
+    background: rgba(9, 9, 12, 0.92);
+    border: 1px solid rgba(120, 124, 133, 0.24);
+    border-radius: 24px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.my-post-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+
+.my-post-header h3 {
+    margin: 0;
+    font-size: 1.15rem;
+}
+
+.my-post-content {
+    color: rgba(226, 232, 240, 0.88);
+    line-height: 1.6;
+}
+
+.meta-line {
+    font-size: 0.8rem;
+    color: rgba(156, 163, 175, 0.75);
+}
+
+.edit-form {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(120, 124, 133, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.edit-form .form-actions {
+    justify-content: flex-start;
+}
+
+.empty-state-box {
+    padding: 32px;
+    text-align: center;
+    color: rgba(156, 163, 175, 0.85);
+    border: 1px dashed rgba(120, 124, 133, 0.35);
+    border-radius: 22px;
+}
+
+@media (max-width: 960px) {
+    .page-shell {
+        padding: 48px 24px 80px;
+    }
+
+    .page-card {
+        padding: 40px 28px;
+    }
+}
+
+@media (max-width: 600px) {
+    .page-shell {
+        padding: 32px 16px 72px;
+    }
+
+    .page-card {
+        padding: 32px 22px;
+    }
+
+    .my-post-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+.my-post-like-count {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    color: var(--text-muted, #64748b);
+}

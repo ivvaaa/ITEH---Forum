@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
@@ -6,10 +6,13 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\CarController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\PasswordResetController;
+use App\Http\Controllers\PostLikeController;
 
 // Public auth
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::apiResource('posts', PostController::class)->only(['index', 'show']);
+
 
 // Public read-only posts (adjust if you want protected)
 // Route::apiResource('posts', PostController::class)->only(['index','show']);
@@ -28,6 +31,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::apiResource('cars', CarController::class);
     Route::apiResource('comments', CommentController::class);
+
+    Route::apiResource('posts', PostController::class)->except(['index', 'show']);
+
+    Route::post('/posts/{post}/like', [PostLikeController::class, 'store']);
+    Route::delete('/posts/{post}/like', [PostLikeController::class, 'destroy']);
+
 });
 
 // Admin-only
@@ -35,9 +44,16 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::get('/users', [UserController::class, 'index']);                   // list users
     Route::get('/users/search', [UserController::class, 'search']);           // search
     Route::put('/users/{id}/role', [UserController::class, 'updateRole']);    // update by id
-    Route::apiResource('posts', PostController::class);
+    Route::get('/roles', [UserController::class, 'roles']);                   // list roles
+    Route::delete('/users/{id}', [UserController::class, 'destroy']);         // delete user
+    //Route::apiResource('posts', PostController::class)->only(['index', 'show']);
 
 });
+
+
+
+
+
 
 
 

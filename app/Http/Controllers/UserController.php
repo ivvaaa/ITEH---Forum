@@ -9,6 +9,17 @@ use Illuminate\Http\Request;
 class UserController extends Controller
 {
     /**
+     * GET /api/roles
+     * List available roles for the admin UI.
+     */
+    public function roles()
+    {
+        return Role::select('id', 'name')
+            ->orderBy('id')
+            ->get();
+    }
+
+    /**
      * GET /api/users
      * List users with their role (lean payload).
      */
@@ -98,6 +109,25 @@ class UserController extends Controller
 
         // Return lean payload
         return response()->json($user->only('id', 'name', 'email', 'role_id'));
+    }
+
+    /**
+     * DELETE /api/users/{id}
+     * Remove a user unless the admin is targeting their own account.
+     */
+    public function destroy($id)
+    {
+        $user = User::findOrFail($id);
+        if (auth()->id() === $user->id) {
+            return response()->json([
+                'message' => 'Ne moete obrisati sopstveni nalog.',
+            ], 422);
+        }
+        $user->delete();
+        return response()->json([
+            'message' => 'Korisnik je obrisan.',
+            'id' => $user->id,
+        ]);
     }
 
     /**

@@ -12,13 +12,13 @@ class Post extends Model
     protected $fillable = [
         'content',
         'user_id',
-        'car_id',  // remove if you drop the column
+        'car_id',
         'images',
         'other',
     ];
 
     protected $casts = [
-        'images' => 'array', // JSON <-> array
+        'images' => 'array',
     ];
 
     public function user()
@@ -26,7 +26,6 @@ class Post extends Model
         return $this->belongsTo(User::class);
     }
 
-    // remove if you drop car_id
     public function car()
     {
         return $this->belongsTo(Car::class);
@@ -35,5 +34,15 @@ class Post extends Model
     public function comments()
     {
         return $this->hasMany(Comment::class);
+    }
+
+    public function likes()
+    {
+        return $this->hasMany(PostLike::class);
+    }
+
+    public function likedByUsers()
+    {
+        return $this->belongsToMany(User::class, 'post_likes')->withTimestamps();
     }
 }

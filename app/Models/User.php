@@ -13,13 +13,12 @@ class User extends Authenticatable
 
     /**
      * Mass assignable attributes.
-     * Keep keys used by your AuthController (register/update).
      */
     protected $fillable = [
         'name',
         'email',
         'password',
-        'role_id',        // single-role per user
+        'role_id',
         'interests',
         'profile_photo',
         'bio',
@@ -48,7 +47,6 @@ class User extends Authenticatable
      */
     public function role()
     {
-        // Single role via users.role_id
         return $this->belongsTo(Role::class);
     }
 
@@ -66,5 +64,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Comment::class);
     }
-}
 
+    public function likedPosts()
+    {
+        return $this->belongsToMany(Post::class, 'post_likes')->withTimestamps();
+    }
+}
