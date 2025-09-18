@@ -188,6 +188,16 @@ const PostDetails = () => {
             setSubmitting(false);
         }
     };
+    const handleDelete = async () => {
+        if (!post || roleId !== 1) return;
+        if (!window.confirm("Da li ste sigurni da želite da obrišete ovu objavu?")) return;
+        try {
+            await api.delete(`/api/posts/${post.id}`);
+            navigate("/"); // ili gde želiš da ga vratiš nakon brisanja
+        } catch (error) {
+            alert("Greška pri brisanju posta.");
+        }
+    };
 
     const handleToggleLike = async () => {
         if (!post || !canLike) {
@@ -268,6 +278,7 @@ const PostDetails = () => {
                         <span style={{ fontSize: "0.95em", color: "rgba(148,163,184,0.78)" }}>- {formatDateTime(post.created_at)}</span>
                     </div>
                     {/* Auto markirano, veliko, crveni outline */}
+
                     <div
                         style={{
                             fontSize: "1.25rem",
@@ -377,6 +388,28 @@ const PostDetails = () => {
                         <img src={activeImage} alt="Prikaz slike automobila" />
                     </div>
                 </div>
+            )}
+            {roleId === 1 && (
+                <button
+                    type="button"
+                    className="btn outline"
+                    style={{
+                        fontSize: "0.85rem",
+                        fontWeight: 300,
+                        letterSpacing: "0.08em",
+                        color: "var(--text-primary)",
+                        border: "1.5px solid var(--accent)",
+                        borderRadius: 18,
+                        padding: "14px 18px",
+                        marginBottom: 10,
+                        marginTop: 20,
+                        display: "inline-block",
+                        background: "rgba(239,35,60,0.06)"
+                    }}
+                    onClick={handleDelete}
+                >
+                    Obriši post
+                </button>
             )}
         </div>
     );
