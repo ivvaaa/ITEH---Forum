@@ -61,7 +61,7 @@ export default function CreatePostPage() {
 
         try {
             await api.post("/api/posts", formData);
-            //navigate("/"); //  na pocetnu nakon uspesnog kreiranja
+            navigate("/");
         } catch (err) {
             setError("Greska pri kreiranju posta.");
         }
