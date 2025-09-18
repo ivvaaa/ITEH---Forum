@@ -1,6 +1,20 @@
-﻿import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import api from "../api/axios";
 import "./managePages.css";
+
+
+const HeartIcon = ({ filled = false, ...props } = {}) => (
+    <svg viewBox="0 0 24 24" fill="none" {...props}>
+        <path
+            d="M12 21s-6.2-4.35-9-7.74C-1.1 9 1.3 4.5 5.5 4.5a4.5 4.5 0 016.5 3.3A4.5 4.5 0 0118.5 4.5c4.2 0 6.6 4.5 2.5 8.76C18.2 16.65 12 21 12 21z"
+            fill={filled ? "currentColor" : "none"}
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+    </svg>
+);
 
 const initialFormState = {
     content: "",
@@ -26,7 +40,6 @@ const MyPostsPage = () => {
             const first = await api.get("/api/posts", {
                 params: { mine: true, per_page: 50, page: 1 },
             });
-
             let allPosts = first.data?.data || [];
             const meta = first.data?.meta || {};
             const lastPage = Number(meta.last_page || 1);
@@ -38,13 +51,11 @@ const MyPostsPage = () => {
                         params: { mine: true, per_page: 50, page },
                     }));
                 }
-
                 const responses = await Promise.all(requests);
                 responses.forEach((response) => {
                     allPosts = allPosts.concat(response.data?.data || []);
                 });
             }
-
             setPosts(allPosts);
         } catch (err) {
             console.error(err);
@@ -55,6 +66,7 @@ const MyPostsPage = () => {
             setLoading(false);
         }
     }, []);
+
 
     useEffect(() => {
         fetchPosts();
@@ -119,83 +131,93 @@ const MyPostsPage = () => {
         }
     };
 
-    if (loading) {
-        return (
-            <div className="page-shell">
-                <section className="page-card narrow">
-                    <p className="meta-line">Ucitavanje...</p>
-                </section>
-            </div>
-        );
-    }
+    // if (loading) {
+    //     return (
+    //         <div className="page-shell">
+    //             <section className="page-card narrow">
+    //                 <p className="meta-line">Ucitavanje...</p>
+    //             </section>
+    //         </div>
+    //     );
+    // }
+
 
     return (
         <div className="page-shell">
             <section className="page-card">
                 <header className="page-header">
                     <h1>Moje objave</h1>
-                    <p>Pregledaj, azuriraj ili osvezi svoje postove sa staze i iz garaze.</p>
                 </header>
                 {error && <div className="alert">{error}</div>}
                 {posts.length === 0 ? (
                     <div className="empty-state-box">Jos uvek nema objava. Kreiraj svoju prvu pricu o automobilu!</div>
                 ) : (
                     <div className="posts-collection">
-                        {posts.map((post) => (
-                            <article key={post.id} className="my-post-card">
-                                <div className="my-post-header">
-                                    <div>
-                                        <h3>{post.car ? `${post.car.make} ${post.car.model}` : "Objava"}</h3>
-                                        <div className="meta-line">Objavljeno: {new Date(post.created_at).toLocaleString()}</div>
+                        {posts.map((post) => {
+                            const likeCount = Number(post.likes_count ?? 0);
+                            const likedByMe = Boolean(post.liked_by_current_user);
+
+                            return (
+                                <article key={post.id} className="my-post-card">
+                                    <div className="my-post-header">
+                                        <div>
+                                            <h3>{post.car ? `${post.car.make} ${post.car.model}` : "Objava"}</h3>
+                                            <div className="meta-line">Objavljeno: {new Date(post.created_at).toLocaleString()}</div>
+                                        </div>
+                                        <button type="button" className="btn ghost small" onClick={() => startEdit(post)}>
+                                            Uredi
+                                        </button>
                                     </div>
-                                    <button type="button" className="btn ghost small" onClick={() => startEdit(post)}>
-                                        Uredi
-                                    </button>
-                                </div>
-                                <p className="my-post-content">{post.content}</p>
-                                <div className="my-post-like-count">
-                                    {Number(post.likes_count ?? 0)} {Number(post.likes_count ?? 0) === 1 ? "lajk" : "lajkova"}
-                                </div>
-                                {editingId === post.id && (
-                                    <form className="edit-form" onSubmit={handleUpdate}>
-                                        <label className="form-field">
-                                            <span>Opis</span>
-                                            <textarea value={form.content} onChange={handleInputChange("content")} required />
-                                        </label>
-                                        <div className="field-row">
-                                            <label className="form-field">
-                                                <span>Marka</span>
-                                                <input type="text" value={form.carMake} onChange={handleInputChange("carMake")} required />
-                                            </label>
-                                            <label className="form-field">
-                                                <span>Model</span>
-                                                <input type="text" value={form.carModel} onChange={handleInputChange("carModel")} required />
-                                            </label>
-                                            <label className="form-field small">
-                                                <span>Godiste</span>
-                                                <input type="number" min="1900" max="2099" value={form.carYear} onChange={handleInputChange("carYear")} required />
-                                            </label>
+                                    <p className="my-post-content">{post.content}</p>
+                                    <div className="my-post-like-bar">
+                                        <div className={`like-heart ${likeCount > 0 ? "active" : ""}`} aria-hidden="true">
+                                            <HeartIcon filled={likeCount > 0} className="heart-icon" />
                                         </div>
-                                        <label className="form-field">
-                                            <span>Dodatno</span>
-                                            <input type="text" value={form.other} onChange={handleInputChange("other")} />
-                                        </label>
-                                        <label className="form-field">
-                                            <span>Nove slike (opciono)</span>
-                                            <input type="file" multiple accept="image/*" onChange={handleImageChange} />
-                                        </label>
-                                        <div className="form-actions">
-                                            <button type="submit" className="btn primary small" disabled={saving}>
-                                                {saving ? "Cuvanje..." : "Sacuvaj"}
-                                            </button>
-                                            <button type="button" className="btn ghost small" onClick={cancelEdit}>
-                                                Otkazi
-                                            </button>
-                                        </div>
-                                    </form>
-                                )}
-                            </article>
-                        ))}
+                                        <span className="like-count">
+                                            {likeCount}
+                                        </span>
+                                    </div>
+                                    {editingId === post.id && (
+                                        <form className="edit-form" onSubmit={handleUpdate}>
+                                            <label className="form-field">
+                                                <span>Opis</span>
+                                                <textarea value={form.content} onChange={handleInputChange("content")} required />
+                                            </label>
+                                            <div className="field-row">
+                                                <label className="form-field">
+                                                    <span>Marka</span>
+                                                    <input type="text" value={form.carMake} onChange={handleInputChange("carMake")} required />
+                                                </label>
+                                                <label className="form-field">
+                                                    <span>Model</span>
+                                                    <input type="text" value={form.carModel} onChange={handleInputChange("carModel")} required />
+                                                </label>
+                                                <label className="form-field small">
+                                                    <span>Godiste</span>
+                                                    <input type="number" min="1900" max="2099" value={form.carYear} onChange={handleInputChange("carYear")} required />
+                                                </label>
+                                            </div>
+                                            <label className="form-field">
+                                                <span>Dodatno</span>
+                                                <input type="text" value={form.other} onChange={handleInputChange("other")} />
+                                            </label>
+                                            <label className="form-field">
+                                                <span>Nove slike (opciono)</span>
+                                                <input type="file" multiple accept="image/*" onChange={handleImageChange} />
+                                            </label>
+                                            <div className="form-actions">
+                                                <button type="submit" className="btn primary small" disabled={saving}>
+                                                    {saving ? "Cuvanje..." : "Sacuvaj"}
+                                                </button>
+                                                <button type="button" className="btn ghost small" onClick={cancelEdit}>
+                                                    Otkazi
+                                                </button>
+                                            </div>
+                                        </form>
+                                    )}
+                                </article>
+                            );
+                        })}
                     </div>
                 )}
             </section>

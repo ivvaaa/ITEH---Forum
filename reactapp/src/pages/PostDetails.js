@@ -45,6 +45,19 @@ const getAuthToken = () => {
     );
 };
 
+const HeartIcon = ({ filled = false, ...props } = {}) => (
+    <svg viewBox="0 0 24 24" fill="none" {...props}>
+        <path
+            d="M12 21s-6.2-4.35-9-7.74C-1.1 9 1.3 4.5 5.5 4.5a4.5 4.5 0 016.5 3.3A4.5 4.5 0 0118.5 4.5c4.2 0 6.6 4.5 2.5 8.76C18.2 16.65 12 21 12 21z"
+            fill={filled ? "currentColor" : "none"}
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+    </svg>
+);
+
 const normalizeImages = (images) => {
     if (!images) return [];
     if (Array.isArray(images)) return images;
@@ -282,16 +295,16 @@ const PostDetails = () => {
                 <section className="post-like-bar">
                     <button
                         type="button"
-                        className={`btn link ${post.liked_by_current_user ? "active" : ""}`}
+                        className={`like-heart ${post.liked_by_current_user ? "active" : ""}`}
                         onClick={handleToggleLike}
                         disabled={likeButtonDisabled}
                         title={likeTitle}
+                        aria-pressed={post.liked_by_current_user}
+                        aria-label={post.liked_by_current_user ? "Ukloni lajk" : "Svidja mi se"}
                     >
-                        {post.liked_by_current_user ? "Ukloni lajk" : "Svidja mi se"}
+                        <HeartIcon filled={post.liked_by_current_user} className="heart-icon" aria-hidden="true" />
                     </button>
-                    <span className="like-count">
-                        {likeCount} {likeCount === 1 ? "lajk" : "lajkova"}
-                    </span>
+                    <span className="like-count">{likeCount}</span>
                 </section>
                 {likeError && <div className="like-error">{likeError}</div>}
 

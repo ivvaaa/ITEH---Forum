@@ -9,16 +9,25 @@ class Post extends Model
 {
     use HasFactory;
 
+    public const CATEGORY_OPTIONS = [
+        'elektricni_automobili',
+        'oldtajmeri',
+        'sportski',
+        'odrzavanje_i_popravka',
+    ];
+
     protected $fillable = [
         'content',
         'user_id',
         'car_id',
         'images',
         'other',
+        'categories',
     ];
 
     protected $casts = [
         'images' => 'array',
+        'categories' => 'array',
     ];
 
     public function user()

@@ -9,6 +9,8 @@ use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
+use App\Support\CarImageLibrary;
 
 class PostController extends Controller
 {
@@ -17,16 +19,17 @@ class PostController extends Controller
      */
     public function index(Request $request)
     {
-        $perPage = (int) $request->input('per_page', 7);
+        $perPage = (int) $request->input('per_page', 3);
 
         $query = Post::with(['user', 'car'])
-            ->withCount('likes')
-            ->latest();
+            ->withCount('likes');
 
         if ($request->user()) {
-            $query->withExists(['likedByUsers as liked_by_current_user' => function ($builder) use ($request) {
-                $builder->where('user_id', $request->user()->id);
-            }]);
+            $query->withExists([
+                'likedByUsers as liked_by_current_user' => function ($builder) use ($request) {
+                    $builder->where('user_id', $request->user()->id);
+                }
+            ]);
         }
 
         if ($request->boolean('mine')) {
@@ -59,15 +62,68 @@ class PostController extends Controller
             });
         }
 
+        $filterCategories = $this->normalizeCategories(
+            $request->input('categories', $request->input('category'))
+        );
+
+        if (!empty($filterCategories)) {
+            $query->where(function ($builder) use ($filterCategories) {
+                foreach ($filterCategories as $category) {
+                    $builder->orWhereJsonContains('categories', $category);
+                }
+            });
+        }
+
+        $query->orderByRaw($this->buildCategoryOrderCase())
+            ->orderByDesc('created_at');
+
         return PostResource::collection($query->paginate($perPage));
     }
+
+    private function buildCategoryOrderCase(): string
+    {
+        $cases = [];
+
+        foreach (Post::CATEGORY_OPTIONS as $index => $value) {
+            $cases[] = "WHEN JSON_CONTAINS(categories, '\"{$value}\"') THEN {$index}";
+        }
+
+        return 'CASE ' . implode(' ', $cases) . ' ELSE ' . count(Post::CATEGORY_OPTIONS) . ' END';
+    }
+
+    private function normalizeCategories($input): array
+    {
+        if (is_null($input)) {
+            return [];
+        }
+
+        if (!is_array($input)) {
+            $input = explode(',', (string) $input);
+        }
+
+        return collect($input)
+            ->map(fn($value) => is_string($value) ? trim($value) : null)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
     public function store(Request $request)
     {
+        $request->merge([
+            'categories' => $this->normalizeCategories(
+                $request->input('categories', $request->input('category'))
+            ),
+        ]);
+
         $validator = Validator::make($request->all(), [
             'content' => 'required|string',
             'car_make' => 'required|string|max:255',
             'car_model' => 'required|string|max:255',
             'car_year' => 'required|integer|between:1900,2099',
+            'categories' => ['required', 'array', 'min:1'],
+            'categories.*' => ['string', Rule::in(Post::CATEGORY_OPTIONS)],
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'other' => 'nullable|string',
@@ -86,6 +142,10 @@ class PostController extends Controller
             }
         }
 
+        if (empty($imagePaths)) {
+            $imagePaths = CarImageLibrary::random();
+        }
+
         $car = Car::create([
             'make' => $request->car_make,
             'model' => $request->car_model,
@@ -97,8 +157,9 @@ class PostController extends Controller
             'content' => $request->content,
             'user_id' => Auth::id(),
             'car_id' => $car->id,
-            'images' => json_encode($imagePaths),
+            'images' => $imagePaths,
             'other' => $request->other,
+            'categories' => $request->input('categories'),
         ]);
 
         return new PostResource($post);
@@ -121,9 +182,11 @@ class PostController extends Controller
             ->findOrFail($id);
 
         if ($request->user()) {
-            $post->loadExists(['likedByUsers as liked_by_current_user' => function ($builder) use ($request) {
-                $builder->where('user_id', $request->user()->id);
-            }]);
+            $post->loadExists([
+                'likedByUsers as liked_by_current_user' => function ($builder) use ($request) {
+                    $builder->where('user_id', $request->user()->id);
+                }
+            ]);
         }
 
         return new PostResource($post);
@@ -134,11 +197,22 @@ class PostController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $incomingCategories = null;
+
+        if ($request->has('categories') || $request->has('category')) {
+            $incomingCategories = $this->normalizeCategories(
+                $request->input('categories', $request->input('category'))
+            );
+            $request->merge(['categories' => $incomingCategories]);
+        }
+
         $validator = Validator::make($request->all(), [
             'content' => 'sometimes|required|string',
             'car_make' => 'sometimes|required|string|max:255',
             'car_model' => 'sometimes|required|string|max:255',
             'car_year' => 'sometimes|required|integer|between:1900,2099',
+            'categories' => ['sometimes', 'required', 'array', 'min:1'],
+            'categories.*' => ['string', Rule::in(Post::CATEGORY_OPTIONS)],
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'other' => 'nullable|string',
@@ -165,10 +239,15 @@ class PostController extends Controller
             }
         }
 
+        if (empty($imagePaths)) {
+            $imagePaths = CarImageLibrary::random();
+        }
+
         $post->update([
             'content' => $request->input('content', $post->content),
-            'images' => json_encode($imagePaths),
+            'images' => $imagePaths,
             'other' => $request->input('other', $post->other),
+            'categories' => $incomingCategories ?? ($post->categories ?? []),
         ]);
 
         if ($post->car) {
@@ -203,12 +282,4 @@ class PostController extends Controller
         return response()->json(['message' => 'Post and related comments deleted successfully.']);
     }
 }
-
-
-
-
-
-
-
-
 

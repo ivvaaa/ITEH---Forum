@@ -1,57 +1,139 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import useAutoNews from "../api/hooks/useAutoNews";
+import useFuelPrices from "../api/hooks/useFuelPrices";
 import "./homePage.css";
 
-const getStoredUser = () => {
-  try {
-    return (
-      JSON.parse(sessionStorage.getItem("user")) ||
-      JSON.parse(localStorage.getItem("user")) ||
-      null
-    );
-  } catch (error) {
-    return null;
-  }
+const CATEGORY_FILTERS = [
+  { value: "all", label: "Sve teme", icon: "all" },
+  { value: "elektricni_automobili", label: "Elektricni automobili", icon: "elektricni_automobili" },
+  { value: "oldtajmeri", label: "Oldtajmeri", icon: "oldtajmeri" },
+  { value: "sportski", label: "Sportski", icon: "sportski" },
+  { value: "odrzavanje_i_popravka", label: "Odrzavanje i popravka", icon: "odrzavanje_i_popravka" },
+];
+
+const CATEGORY_LABELS = CATEGORY_FILTERS.filter((item) => item.value !== "all").reduce((acc, item) => {
+  acc[item.value] = item.label;
+  return acc;
+}, {});
+
+const CATEGORY_ORDER = CATEGORY_FILTERS.filter((item) => item.value !== "all").map((item) => item.value);
+const DEFAULT_CATEGORY = "all";
+
+const CATEGORY_ICONS = {
+  all: (props = {}) => (
+    <svg viewBox="0 0 24 24" fill="none" {...props}>
+      <circle cx="6" cy="8" r="2" fill="currentColor" />
+      <circle cx="12" cy="12" r="2" fill="currentColor" />
+      <circle cx="18" cy="16" r="2" fill="currentColor" />
+      <circle cx="6" cy="16" r="2" fill="currentColor" opacity="0.55" />
+      <circle cx="12" cy="8" r="2" fill="currentColor" opacity="0.55" />
+    </svg>
+  ),
+  elektricni_automobili: (props = {}) => (
+    <svg viewBox="0 0 24 24" fill="none" {...props}>
+      <path d="M13 2l-9 12h7v8l9-12h-7V2z" fill="currentColor" />
+    </svg>
+  ),
+  oldtajmeri: (props = {}) => (
+    <svg viewBox="0 0 24 24" fill="none" {...props}>
+      <path
+        d="M4 14h1.2l1.4-4.2A3 3 0 019.5 7h5a3 3 0 012.9 2.8L18.8 14H20a1 1 0 011 1v3h-2v2h-2v-2H7v2H5v-2H3v-3a1 1 0 011-1z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="8" cy="17.5" r="1.5" fill="currentColor" />
+      <circle cx="16" cy="17.5" r="1.5" fill="currentColor" />
+    </svg>
+  ),
+  sportski: (props = {}) => (
+    <svg viewBox="0 0 24 24" fill="none" {...props}>
+      <path d="M6 4v16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M6 4h11l-3 3 3 3-3 3 3 3H6" fill="currentColor" opacity="0.9" />
+    </svg>
+  ),
+  odrzavanje_i_popravka: (props = {}) => (
+    <svg viewBox="0 0 24 24" fill="none" {...props}>
+      <path
+        d="M21 7.5a4.5 4.5 0 01-6.6 4.04L9 16.94V21H7v-3.06L3.56 14.5l1.42-1.42L7 15.1l4.46-4.46A4.5 4.5 0 0117.5 3a4.5 4.5 0 013.5 2.06L18 8.06 15.94 6l2.9-2.9A4.5 4.5 0 0121 7.5z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  ),
 };
 
-const resolveRoleId = (user) => {
-  const storedRole = sessionStorage.getItem("role_id");
-  if (storedRole) {
-    const parsed = Number(storedRole);
-    if (!Number.isNaN(parsed)) {
-      return parsed;
-    }
-  }
-  if (user?.role_id != null) {
-    const parsed = Number(user.role_id);
-    if (!Number.isNaN(parsed)) {
-      return parsed;
-    }
-  }
-  if (user?.role?.id != null) {
-    const parsed = Number(user.role.id);
-    if (!Number.isNaN(parsed)) {
-      return parsed;
-    }
-  }
-  return null;
+
+const renderCategoryIcon = (key, props = {}) => {
+  const Icon = CATEGORY_ICONS[key];
+  return Icon ? <Icon {...props} /> : null;
 };
 
-const getAuthToken = () => {
-  return (
-    sessionStorage.getItem("auth_token") ||
-    localStorage.getItem("access_token") ||
-    localStorage.getItem("token") ||
-    null
-  );
+
+const SearchIcon = (props = {}) => (
+  <svg viewBox="0 0 24 24" fill="none" {...props}>
+    <circle cx="11" cy="11" r="6" stroke="currentColor" strokeWidth="1.8" />
+    <line x1="15.5" y1="15.5" x2="20" y2="20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+  </svg>
+);
+
+const CarIcon = (props = {}) => (
+  <svg viewBox="0 0 24 24" fill="none" {...props}>
+    <path
+      d="M4 15h1.3l1.3-3.9A3 3 0 019.6 9h4.8a3 3 0 012.9 2.1L18.7 15H20a1 1 0 011 1v3h-2v2h-2v-2H7v2H5v-2H3v-3a1 1 0 011-1z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <circle cx="8" cy="17.5" r="1.5" fill="currentColor" />
+    <circle cx="16" cy="17.5" r="1.5" fill="currentColor" />
+  </svg>
+);
+
+const FilterIcon = (props = {}) => (
+  <svg viewBox="0 0 24 24" fill="none" {...props}>
+    <path d="M4 5h16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    <path d="M7 12h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    <path d="M10 19h4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+  </svg>
+);
+
+const HeartIcon = ({ filled = false, ...props } = {}) => (
+  <svg viewBox="0 0 24 24" fill="none" {...props}>
+    <path
+      d="M12 21s-6.2-4.35-9-7.74C-1.1 9 1.3 4.5 5.5 4.5a4.5 4.5 0 016.5 3.3A4.5 4.5 0 0118.5 4.5c4.2 0 6.6 4.5 2.5 8.76C18.2 16.65 12 21 12 21z"
+      fill={filled ? "currentColor" : "none"}
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const normalizePostCategories = (value) => {
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (typeof value === "string" && value.trim() !== "") {
+    return [value.trim()];
+  }
+
+  return [];
 };
 
 const HomePage = () => {
   const [posts, setPosts] = useState([]);
   const [search, setSearch] = useState("");
   const [carMake, setCarMake] = useState("");
+  const [selectedCategories, setSelectedCategories] = useState([DEFAULT_CATEGORY]);
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [pendingLikes, setPendingLikes] = useState([]);
@@ -63,6 +145,7 @@ const HomePage = () => {
 
   const navigate = useNavigate();
   const { articles: news, loading: newsLoading, error: newsError, refresh: refreshNews } = useAutoNews();
+  const { prices: fuelPrices, loading: fuelLoading, error: fuelError, refresh: refreshFuel } = useFuelPrices();
 
   const formatPublished = (iso) => {
     if (!iso) return "Nepoznat datum";
@@ -71,13 +154,39 @@ const HomePage = () => {
     return new Date(parsed).toLocaleString("sr-RS", { dateStyle: "medium", timeStyle: "short" });
   };
 
-  const POSTS_PER_PAGE = 5;
+  const POSTS_PER_PAGE = 3;
 
-  const fetchPosts = async (query = "", carMakeValue = "", page = 1, perPage = POSTS_PER_PAGE) => {
+  const categoryOrderMap = useMemo(() => {
+    const map = {};
+    CATEGORY_ORDER.forEach((value, index) => {
+      map[value] = index;
+    });
+    return map;
+  }, []);
+
+  const fetchPosts = async ({
+    query = search,
+    carMakeValue = carMake,
+    categoriesValue = selectedCategories,
+    page = 1,
+    perPage = POSTS_PER_PAGE,
+  } = {}) => {
     try {
-      const res = await api.get("/api/posts", {
-        params: { search: query, car_make: carMakeValue, page, per_page: perPage },
-      });
+      const params = {
+        search: query,
+        car_make: carMakeValue,
+        page,
+        per_page: perPage,
+      };
+
+      const normalizedCategories = Array.isArray(categoriesValue) ? categoriesValue : [categoriesValue];
+      const filteredCategories = normalizedCategories.filter((item) => item && item !== DEFAULT_CATEGORY);
+
+      if (filteredCategories.length > 0) {
+        params.categories = filteredCategories;
+      }
+
+      const res = await api.get("/api/posts", { params });
       const payload = res.data || {};
       setPosts(payload.data || []);
       setCurrentPage(payload.meta?.current_page ?? 1);
@@ -92,23 +201,88 @@ const HomePage = () => {
     }
   };
 
+  const computeCategoryRank = (values) => {
+    const normalized = normalizePostCategories(values);
+    if (normalized.length === 0) {
+      return CATEGORY_ORDER.length;
+    }
+
+    return normalized.reduce((rank, value) => {
+      const candidate = categoryOrderMap[value] ?? CATEGORY_ORDER.length;
+      return candidate < rank ? candidate : rank;
+    }, CATEGORY_ORDER.length);
+  };
+
+  const sortedPosts = useMemo(() => {
+    if (!posts || posts.length === 0) {
+      return [];
+    }
+
+    return [...posts].sort((first, second) => {
+      const rankA = computeCategoryRank(first.categories ?? first.category);
+      const rankB = computeCategoryRank(second.categories ?? second.category);
+
+      if (rankA !== rankB) {
+        return rankA - rankB;
+      }
+
+      const createdA = new Date(first?.created_at || 0).getTime();
+      const createdB = new Date(second?.created_at || 0).getTime();
+
+      return createdB - createdA;
+    });
+  }, [posts, categoryOrderMap]);
+
   const handleReset = () => {
     setSearch("");
     setCarMake("");
-    fetchPosts("", "", 1);
+    setSelectedCategories([DEFAULT_CATEGORY]);
+    setCurrentPage(1);
+    fetchPosts({ query: "", carMakeValue: "", categoriesValue: [DEFAULT_CATEGORY], page: 1 });
   };
 
   useEffect(() => {
     fetchPosts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSearch = (event) => {
     event.preventDefault();
-    fetchPosts(search, carMake, 1);
+    setCurrentPage(1);
+    fetchPosts({ query: search, carMakeValue: carMake, categoriesValue: selectedCategories, page: 1 });
   };
 
   const handlePageChange = (page) => {
-    fetchPosts(search, carMake, page);
+    setCurrentPage(page);
+    fetchPosts({ query: search, carMakeValue: carMake, categoriesValue: selectedCategories, page });
+  };
+
+  const handleCategoryToggle = (value) => {
+    setSelectedCategories((prev) => {
+      if (value === DEFAULT_CATEGORY) {
+        const nextCategories = [DEFAULT_CATEGORY];
+        setCurrentPage(1);
+        fetchPosts({ query: search, carMakeValue: carMake, categoriesValue: nextCategories, page: 1 });
+        return nextCategories;
+      }
+
+      const filtered = prev.filter((item) => item !== DEFAULT_CATEGORY);
+      let next;
+
+      if (filtered.includes(value)) {
+        next = filtered.filter((item) => item !== value);
+      } else {
+        next = [...filtered, value];
+      }
+
+      if (next.length === 0) {
+        next = [DEFAULT_CATEGORY];
+      }
+
+      setCurrentPage(1);
+      fetchPosts({ query: search, carMakeValue: carMake, categoriesValue: next, page: 1 });
+      return next;
+    });
   };
 
   const handleViewMore = (postId) => {
@@ -116,7 +290,16 @@ const HomePage = () => {
   };
 
   const handleCreatePost = () => {
-    navigate("/create");
+    const sessionToken = typeof window !== 'undefined' ? sessionStorage.getItem('auth_token') : null;
+    const canCreate = Boolean(sessionToken) && roleId != null && [1, 2].includes(roleId);
+
+    if (!canCreate) {
+      window.alert('Morate se ulogovati.');
+      navigate('/login');
+      return;
+    }
+
+    navigate('/create');
   };
 
   const scrollToSection = (id) => {
@@ -126,8 +309,8 @@ const HomePage = () => {
     }
   };
 
-  const scrollToSearch = () => scrollToSection("search-panel");
-  const scrollToPosts = () => scrollToSection("posts-feed");
+  const scrollToFilters = () => scrollToSection("community-feed");
+  const scrollToPosts = () => scrollToSection("community-feed");
   const scrollToNews = () => scrollToSection("news-section");
 
   const handleToggleLike = async (postId, currentlyLiked) => {
@@ -192,6 +375,19 @@ const HomePage = () => {
               <span>NEED FOR</span>
               <span className="stroke">SPEED</span>
             </h1>
+            <div className="hero-actions">
+              <div className="hero-nav">
+                <button type="button" onClick={handleCreatePost}>
+                  Kreiraj objavu
+                </button>
+                <button type="button" onClick={scrollToPosts}>
+                  Objave
+                </button>
+                <button type="button" onClick={scrollToNews}>
+                  Vesti
+                </button>
+              </div>
+            </div>
           </div>
           <div className="hero-visual" aria-hidden="true">
             <img
@@ -203,107 +399,157 @@ const HomePage = () => {
         </div>
       </section>
 
-      <section className="search-panel" id="search-panel">
-        <div className="panel-header">
-          <div>
-            <h2>Pronadi savrsen automobil i ekipu</h2>
-            <p>Filtriraj objave po marki ili potrazi omiljenog autora.</p>
+      <section className="feed-section" id="community-feed">
+        <div className="feed-header">
+          <div className="feed-title">
+            <h2>Pronadji savrsen automobil i ekipu</h2>
+            <p>Filtriraj objave po temi, marki ili potrazi omiljenog autora.</p>
           </div>
-          <button type="button" className="btn link" onClick={handleReset}>
-            Resetuj filtere
-          </button>
         </div>
-        <form className="search-form" onSubmit={handleSearch}>
-          <label className="field">
-            <span>Pretrazi postove, korisnike...</span>
-            <input
-              type="text"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Unesi kljucnu rec"
-            />
-          </label>
-          <label className="field">
-            <span>Marka automobila</span>
-            <input
-              type="text"
-              value={carMake}
-              onChange={(event) => setCarMake(event.target.value)}
-              placeholder="npr. BMW"
-            />
-          </label>
-          <button type="submit" className="btn primary">
-            Pretrazi
-          </button>
-        </form>
-      </section>
 
-      <section className="posts-section" id="posts-feed">
-        <header className="section-header">
-          <h3>Najnovije objave zajednice</h3>
-          <p>Pridruzi se razgovoru i podeli svoje iskustvo.</p>
-        </header>
-        <div className="posts-grid">
-          {posts.length === 0 && <p className="empty-state">Nema postova.</p>}
-          {posts.map((post) => {
-            const likeCount = Number(post.likes_count ?? 0);
-            const liked = Boolean(post.liked_by_current_user);
-            const isPending = pendingLikes.includes(post.id);
-            const disableLike = !canLike || isPending;
-            const likeTitle = !canLike ? likeDisabledMessage : undefined;
-
-            return (
-              <article key={post.id} className="post-card">
-                <div className="post-meta">
-                  <span className="post-author">{post.user?.name || "Nepoznat korisnik"}</span>
-                  <span className="post-car">
-                    {post.car?.make} {post.car?.model} ({post.car?.year})
-                  </span>
-                </div>
-                <p className="post-content">
-                  {post.content?.slice(0, 120)}
-                  {post.content && post.content.length > 120 ? "..." : ""}
-                </p>
-                {post.images && post.images.length > 0 && (
-                  <div className="post-media">
-                    <img src={post.images[0]} alt="Slika automobila" loading="lazy" />
-                  </div>
-                )}
-                <button type="button" className="btn ghost" onClick={() => handleViewMore(post.id)}>
-                  Vise detalja
-                </button>
-                <div className="post-like-bar">
+        <form className="feed-filter-form" onSubmit={handleSearch}>
+          <div className="category-toolbar" role="group" aria-label="Filtriraj objave po temama">
+            <span className="toolbar-label">
+              <FilterIcon className="toolbar-icon" aria-hidden="true" />
+              Teme
+            </span>
+            <div className="category-pills">
+              {CATEGORY_FILTERS.map((option) => {
+                const isActive = selectedCategories.includes(option.value);
+                return (
                   <button
+                    key={option.value}
                     type="button"
-                    className={`btn link ${liked ? "active" : ""}`}
-                    onClick={() => handleToggleLike(post.id, liked)}
-                    disabled={disableLike}
-                    title={likeTitle}
+                    className={`category-pill ${isActive ? "active" : ""}`}
+                    onClick={() => handleCategoryToggle(option.value)}
+                    aria-pressed={isActive}
                   >
-                    {liked ? "Ukloni lajk" : "Svidja mi se"}
+                    {renderCategoryIcon(option.icon ?? option.value, { className: "category-pill-icon", "aria-hidden": true })}
+                    <span>{option.label}</span>
                   </button>
-                  <span className="like-count">
-                    {likeCount} {likeCount === 1 ? "lajk" : "lajkova"}
-                  </span>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-        {lastPage > 1 && (
-          <div className="pagination">
-            {Array.from({ length: lastPage }, (_, index) => (
-              <button
-                key={index + 1}
-                type="button"
-                onClick={() => handlePageChange(index + 1)}
-                className={`page-btn ${currentPage === index + 1 ? "active" : ""}`}
-              >
-                {index + 1}
-              </button>
-            ))}
+                );
+              })}
+            </div>
           </div>
-        )}
+
+          <div className="filter-grid">
+            <label className="field">
+              <span className="field-label">
+                <SearchIcon className="field-icon" aria-hidden="true" />
+                Pretrazi postove, korisnike...
+              </span>
+              <input
+                type="text"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Unesi kljucnu rec"
+              />
+            </label>
+            <label className="field">
+              <span className="field-label">
+                <CarIcon className="field-icon" aria-hidden="true" />
+                Marka automobila
+              </span>
+              <input
+                type="text"
+                value={carMake}
+                onChange={(event) => setCarMake(event.target.value)}
+                placeholder="npr. BMW"
+              />
+            </label>
+          </div>
+
+          <div className="form-actions feed">
+            <button type="submit" className="btn primary">
+              Pretrazi
+            </button>
+            <button type="button" className="btn ghost" onClick={handleReset}>
+              Resetuj
+            </button>
+          </div>
+        </form>
+
+        <div className="feed-posts">
+          <header className="feed-subheader">
+            <h3>Najnovije objave zajednice</h3>
+            <p>Pridruzi se razgovoru i podeli svoje iskustvo.</p>
+          </header>
+          <div className="posts-grid">
+            {sortedPosts.length === 0 && <p className="empty-state">Nema postova.</p>}
+            {sortedPosts.map((post) => {
+              const likeCount = Number(post.likes_count ?? 0);
+              const liked = Boolean(post.liked_by_current_user);
+              const isPending = pendingLikes.includes(post.id);
+              const disableLike = !canLike || isPending;
+              const likeTitle = !canLike ? likeDisabledMessage : undefined;
+              const categoryValues = normalizePostCategories(post.categories ?? post.category);
+
+              return (
+                <article key={post.id} className="post-card">
+                  <div className="post-meta">
+                    <span className="post-author">{post.user?.name || "Nepoznat korisnik"}</span>
+                    <span className="post-car">
+                      {post.car?.make} {post.car?.model} ({post.car?.year})
+                    </span>
+                  </div>
+                  <div className="post-tags">
+                    {categoryValues.length === 0 ? (
+                      <span className="post-tag">Bez teme</span>
+                    ) : (
+                      categoryValues.map((value) => (
+                        <span key={value} className="post-tag">
+                          {CATEGORY_LABELS[value] || value}
+                        </span>
+                      ))
+                    )}
+                  </div>
+                  <p className="post-content">
+                    {post.content?.slice(0, 220)}
+                    {post.content && post.content.length > 220 ? "..." : ""}
+                  </p>
+                  {post.images && post.images.length > 0 && (
+                    <div className="post-media">
+                      <img src={post.images[0]} alt="Slika automobila" loading="lazy" />
+                    </div>
+                  )}
+                  <div className="post-actions">
+                    <button type="button" className="post-details-btn" onClick={() => handleViewMore(post.id)}>
+                      Vise detalja
+                    </button>
+                    <div className="post-like-bar">
+                      <button
+                        type="button"
+                        className={`like-heart ${liked ? "active" : ""}`}
+                        onClick={() => handleToggleLike(post.id, liked)}
+                        disabled={disableLike}
+                        title={likeTitle}
+                        aria-pressed={liked}
+                        aria-label={liked ? "Ukloni lajk" : "Svidja mi se"}
+                      >
+                        <HeartIcon filled={liked} className="heart-icon" aria-hidden="true" />
+                      </button>
+                      <span className="like-count">{likeCount}</span>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+          {lastPage > 1 && (
+            <div className="pagination">
+              {Array.from({ length: lastPage }, (_, index) => (
+                <button
+                  key={index + 1}
+                  type="button"
+                  onClick={() => handlePageChange(index + 1)}
+                  className={`page-btn ${currentPage === index + 1 ? "active" : ""}`}
+                >
+                  {index + 1}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </section>
 
       <section className="news-section" id="news-section">
@@ -342,9 +588,81 @@ const HomePage = () => {
           </div>
         )}
       </section>
+
+      <section className="fuel-section" aria-label="Cene goriva">
+        <div className="fuel-card">
+          <div className="fuel-card-header">
+            <h2>Aktuelne cene goriva</h2>
+            <button type="button" className="btn ghost" onClick={refreshFuel} disabled={fuelLoading}>
+              {fuelLoading ? "Osvezavanje..." : "Osvezi"}
+            </button>
+          </div>
+          {fuelLoading ? (
+            <p className="fuel-info">Ucitavanje cena...</p>
+          ) : fuelError ? (
+            <p className="fuel-error">{fuelError}</p>
+          ) : (
+            <div className="fuel-grid">
+              {fuelPrices.map((item) => (
+                <article key={item.id} className="fuel-item">
+                  <h3>{item.label}</h3>
+                  <p className="fuel-price">{item.latest.value.toFixed(2)} <span>{item.latest.units}</span></p>
+                  {item.latest.updatedAt && <p className="fuel-updated">Azurirano: {item.latest.updatedAt}</p>}
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 };
 
+const getStoredUser = () => {
+  try {
+    return (
+      JSON.parse(sessionStorage.getItem("user")) ||
+      JSON.parse(localStorage.getItem("user")) ||
+      null
+    );
+  } catch (error) {
+    return null;
+  }
+};
+
+const resolveRoleId = (user) => {
+  const storedRole = sessionStorage.getItem("role_id");
+  if (storedRole) {
+    const parsed = Number(storedRole);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  if (user?.role_id != null) {
+    const parsed = Number(user.role_id);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  if (user?.role?.id != null) {
+    const parsed = Number(user.role.id);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  return null;
+};
+
+const getAuthToken = () => {
+  return (
+    sessionStorage.getItem("auth_token") ||
+    localStorage.getItem("access_token") ||
+    localStorage.getItem("token") ||
+    null
+  );
+};
+
 export default HomePage;
+
+
 

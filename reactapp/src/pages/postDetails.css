@@ -317,6 +317,43 @@
     font-size: 1rem;
     color: var(--text-muted, #64748b);
 }
+.post-like-bar .like-heart {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 999px;
+    border: 1px solid rgba(239, 35, 60, 0.45);
+    background: rgba(239, 35, 60, 0.08);
+    color: var(--accent, #ef233c);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.post-like-bar .like-heart:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(239, 35, 60, 0.28);
+}
+
+.post-like-bar .like-heart:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.post-like-bar .like-heart.active {
+    background: linear-gradient(120deg, var(--accent, #ef233c) 0%, var(--accent-dark, #b11226) 100%);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 12px 24px rgba(239, 35, 60, 0.3);
+}
+
+.post-like-bar .heart-icon {
+    width: 22px;
+    height: 22px;
+}
+
 
 .like-error {
     margin-top: 8px;
