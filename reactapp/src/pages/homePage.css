@@ -311,11 +311,13 @@
     border: 1px solid transparent;
     background: rgba(239, 35, 60, 0.12);
     color: rgba(249, 250, 252, 0.85);
-    font-size: 0.85rem;
+    font-size: 1rem;
     font-weight: 600;
     letter-spacing: 0.04em;
     transition: background 0.2s ease, border 0.2s ease, transform 0.2s ease;
     cursor: pointer;
+        justify-content: center;
+
 }
 
 .category-pill:hover {
@@ -327,7 +329,6 @@
     background: linear-gradient(120deg, var(--accent) 0%, var(--accent-dark) 100%);
     border-color: transparent;
     color: #fff;
-    box-shadow: 0 14px 26px rgba(239, 35, 60, 0.26);
 }
 
 .category-pill-icon {
@@ -538,13 +539,15 @@
 
 .post-author {
     font-weight: 500;
-    font-size: 1rem;
-    color: rgba(226, 232, 240, 0.85);
+    font-size: 0.8rem;
+    color: rgba(202, 208, 217, 0.85);
 }
 
 .post-car {
-    font-size: 0.85rem;
-    color: rgba(156, 163, 175, 0.75);
+    font-size: 1.1rem;
+        font-weight: 500;
+
+    color: rgba(255, 255, 255, 0.75);
     letter-spacing: 0.02em;
 }
 

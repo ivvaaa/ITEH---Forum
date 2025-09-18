@@ -5,6 +5,7 @@ namespace Database\Factories;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use App\Models\User;
 use App\Models\Car;
+use App\Support\CarImageLibrary;
 
 class PostFactory extends Factory
 {
@@ -22,7 +23,7 @@ class PostFactory extends Factory
             'content' => $this->faker->paragraph(), // <-- use method, not property
             'user_id' => $userId,
             'car_id'  => $car->id,                 // remove this line if you drop car_id
-            'images'  => [$this->faker->imageUrl(), $this->faker->imageUrl()], // let Eloquent cast JSON
+            'images'  => CarImageLibrary::random($this->faker->numberBetween(1, 3)),
             'other'   => $this->faker->sentence(), // <-- use method, not property
         ];
     }

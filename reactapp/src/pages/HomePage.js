@@ -152,7 +152,7 @@ const HomePage = () => {
     return new Date(parsed).toLocaleString("sr-RS", { dateStyle: "medium", timeStyle: "short" });
   };
 
-  const POSTS_PER_PAGE = 5;
+  const POSTS_PER_PAGE = 3;
 
   const categoryOrderMap = useMemo(() => {
     const map = {};
@@ -288,7 +288,16 @@ const HomePage = () => {
   };
 
   const handleCreatePost = () => {
-    navigate("/create");
+    const sessionToken = typeof window !== 'undefined' ? sessionStorage.getItem('auth_token') : null;
+    const canCreate = Boolean(sessionToken) && roleId != null && [1, 2].includes(roleId);
+
+    if (!canCreate) {
+      window.alert('Morate se ulogovati.');
+      navigate('/login');
+      return;
+    }
+
+    navigate('/create');
   };
 
   const scrollToSection = (id) => {
@@ -365,12 +374,9 @@ const HomePage = () => {
               <span className="stroke">SPEED</span>
             </h1>
             <div className="hero-actions">
-              <button type="button" onClick={handleCreatePost} className="btn primary">
-                Kreiraj objavu
-              </button>
               <div className="hero-nav">
-                <button type="button" onClick={scrollToFilters}>
-                  Filteri
+                <button type="button" onClick={handleCreatePost}>
+                  Kreiraj objavu
                 </button>
                 <button type="button" onClick={scrollToPosts}>
                   Objave
@@ -394,12 +400,9 @@ const HomePage = () => {
       <section className="feed-section" id="community-feed">
         <div className="feed-header">
           <div className="feed-title">
-            <h2>Pronadi savrsen automobil i ekipu</h2>
+            <h2>Pronadji savrsen automobil i ekipu</h2>
             <p>Filtriraj objave po temi, marki ili potrazi omiljenog autora.</p>
           </div>
-          <button type="button" className="btn link" onClick={handleReset}>
-            Resetuj filtere
-          </button>
         </div>
 
         <form className="feed-filter-form" onSubmit={handleSearch}>

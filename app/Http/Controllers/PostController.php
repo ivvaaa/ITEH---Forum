@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use App\Support\CarImageLibrary;
 
 class PostController extends Controller
 {
@@ -18,15 +19,17 @@ class PostController extends Controller
      */
     public function index(Request $request)
     {
-        $perPage = (int) $request->input('per_page', 7);
+        $perPage = (int) $request->input('per_page', 3);
 
         $query = Post::with(['user', 'car'])
             ->withCount('likes');
 
         if ($request->user()) {
-            $query->withExists(['likedByUsers as liked_by_current_user' => function ($builder) use ($request) {
-                $builder->where('user_id', $request->user()->id);
-            }]);
+            $query->withExists([
+                'likedByUsers as liked_by_current_user' => function ($builder) use ($request) {
+                    $builder->where('user_id', $request->user()->id);
+                }
+            ]);
         }
 
         if ($request->boolean('mine')) {
@@ -99,7 +102,7 @@ class PostController extends Controller
         }
 
         return collect($input)
-            ->map(fn ($value) => is_string($value) ? trim($value) : null)
+            ->map(fn($value) => is_string($value) ? trim($value) : null)
             ->filter()
             ->unique()
             ->values()
@@ -139,6 +142,10 @@ class PostController extends Controller
             }
         }
 
+        if (empty($imagePaths)) {
+            $imagePaths = CarImageLibrary::random();
+        }
+
         $car = Car::create([
             'make' => $request->car_make,
             'model' => $request->car_model,
@@ -175,9 +182,11 @@ class PostController extends Controller
             ->findOrFail($id);
 
         if ($request->user()) {
-            $post->loadExists(['likedByUsers as liked_by_current_user' => function ($builder) use ($request) {
-                $builder->where('user_id', $request->user()->id);
-            }]);
+            $post->loadExists([
+                'likedByUsers as liked_by_current_user' => function ($builder) use ($request) {
+                    $builder->where('user_id', $request->user()->id);
+                }
+            ]);
         }
 
         return new PostResource($post);
@@ -230,6 +239,10 @@ class PostController extends Controller
             }
         }
 
+        if (empty($imagePaths)) {
+            $imagePaths = CarImageLibrary::random();
+        }
+
         $post->update([
             'content' => $request->input('content', $post->content),
             'images' => $imagePaths,
@@ -269,3 +282,4 @@ class PostController extends Controller
         return response()->json(['message' => 'Post and related comments deleted successfully.']);
     }
 }
+
