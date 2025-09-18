@@ -264,7 +264,13 @@ class PostController extends Controller
     {
         $post = Post::findOrFail($id);
 
-        // Prvo obrisi komentare vezane za post
+        $user = Auth::user();
+        $roleId = (int) ($user->role_id ?? 0);
+
+        if ($post->user_id !== ($user->id ?? null) && $roleId !== 1) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+// Prvo obrisi komentare vezane za post
         Comment::where('post_id', $post->id)->delete();
 
         // Onda obrisi post

@@ -48,7 +48,9 @@ class CommentController extends Controller
     // PUT /api/comments/{comment}
     public function update(Request $request, Comment $comment)
     {
-        if ($comment->user_id !== $request->user()->id) {
+        $user = $request->user();
+        $roleId = (int) ($user->role_id ?? 0);
+        if ($comment->user_id !== $user->id && $roleId !== 1) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
@@ -64,7 +66,9 @@ class CommentController extends Controller
     // DELETE /api/comments/{comment}
     public function destroy(Request $request, Comment $comment)
     {
-        if ($comment->user_id !== $request->user()->id) {
+        $user = $request->user();
+        $roleId = (int) ($user->role_id ?? 0);
+        if ($comment->user_id !== $user->id && $roleId !== 1) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
