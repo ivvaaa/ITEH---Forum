@@ -384,7 +384,6 @@
 .field input:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 4px rgba(239, 35, 60, 0.2);
 }
 
 .form-actions.feed {
@@ -511,12 +510,10 @@
     background: linear-gradient(120deg, var(--accent) 0%, var(--accent-dark) 100%);
     color: #fff;
     border-color: transparent;
-    box-shadow: 0 12px 24px rgba(239, 35, 60, 0.28);
 }
 
 .page-btn:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(239, 35, 60, 0.25);
 }
 
 .post-card {
