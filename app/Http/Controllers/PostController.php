@@ -10,7 +10,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
-use App\Support\CarImageLibrary;
 
 class PostController extends Controller
 {
@@ -142,10 +141,6 @@ class PostController extends Controller
             }
         }
 
-        if (empty($imagePaths)) {
-            $imagePaths = CarImageLibrary::random();
-        }
-
         $car = Car::create([
             'make' => $request->car_make,
             'model' => $request->car_model,
@@ -237,10 +232,6 @@ class PostController extends Controller
                 $path = $image->store('images', 'public');
                 $imagePaths[] = 'storage/' . $path;
             }
-        }
-
-        if (empty($imagePaths)) {
-            $imagePaths = CarImageLibrary::random();
         }
 
         $post->update([
