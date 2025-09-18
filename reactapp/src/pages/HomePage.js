@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import useAutoNews from "../api/hooks/useAutoNews";
+import useFuelPrices from "../api/hooks/useFuelPrices";
 import "./homePage.css";
 
 const CATEGORY_FILTERS = [
@@ -144,6 +145,7 @@ const HomePage = () => {
 
   const navigate = useNavigate();
   const { articles: news, loading: newsLoading, error: newsError, refresh: refreshNews } = useAutoNews();
+  const { prices: fuelPrices, loading: fuelLoading, error: fuelError, refresh: refreshFuel } = useFuelPrices();
 
   const formatPublished = (iso) => {
     if (!iso) return "Nepoznat datum";
@@ -585,6 +587,32 @@ const HomePage = () => {
             ))}
           </div>
         )}
+      </section>
+
+      <section className="fuel-section" aria-label="Cene goriva">
+        <div className="fuel-card">
+          <div className="fuel-card-header">
+            <h2>Aktuelne cene goriva</h2>
+            <button type="button" className="btn ghost" onClick={refreshFuel} disabled={fuelLoading}>
+              {fuelLoading ? "Osvezavanje..." : "Osvezi"}
+            </button>
+          </div>
+          {fuelLoading ? (
+            <p className="fuel-info">Ucitavanje cena...</p>
+          ) : fuelError ? (
+            <p className="fuel-error">{fuelError}</p>
+          ) : (
+            <div className="fuel-grid">
+              {fuelPrices.map((item) => (
+                <article key={item.id} className="fuel-item">
+                  <h3>{item.label}</h3>
+                  <p className="fuel-price">{item.latest.value.toFixed(2)} <span>{item.latest.units}</span></p>
+                  {item.latest.updatedAt && <p className="fuel-updated">Azurirano: {item.latest.updatedAt}</p>}
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
       </section>
     </div>
   );

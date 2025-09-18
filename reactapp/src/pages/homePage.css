@@ -886,11 +886,175 @@
 
 
 
+.fuel-section {
+    padding: 22px clamp(24px, 6vw, 64px) 0;
+}
+
+.fuel-card {
+    position: relative;
+    margin: 0 auto;
+    max-width: 1000px;
+    background: linear-gradient(140deg, rgba(239, 35, 60, 0.18) 0%, rgba(18, 20, 27, 0.88) 65%, rgba(18, 20, 27, 0.92) 100%);
+    border: 1px solid rgba(239, 35, 60, 0.35);
+    border-radius: 28px;
+    padding: clamp(22px, 4vw, 38px);
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    overflow: hidden;
+}
+
+.fuel-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at top right, rgba(239, 35, 60, 0.22), transparent 55%);
+    pointer-events: none;
+}
+
+.fuel-card > * {
+    position: relative;
+    z-index: 1;
+}
+
+.fuel-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.fuel-card-header h2 {
+    margin: 0;
+    font-size: clamp(1.5rem, 2.6vw, 2rem);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #fef2f4;
+}
+
+.fuel-card-header .btn.ghost {
+    border-color: rgba(239, 35, 60, 0.6);
+    color: #ffe4ea;
+    background: rgba(12, 11, 11, 0.18);
+}
+
+.fuel-card-header .btn.ghost:hover:not(:disabled) {
+    border-color: transparent;
+    background: linear-gradient(120deg, var(--accent) 0%, var(--accent-dark) 100%);
+    color: #fff;
+}
+
+.fuel-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(160px, 1fr));
+    gap: 18px;
+    overflow-x: auto;
+    padding-bottom: 12px;
+}
 
 
+.fuel-item {
+    position: relative;
+    background: rgba(9, 9, 12, 0.92);
+    border: 1px solid rgba(120, 124, 133, 0.22);
+    border-radius: 22px;
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
 
+.fuel-item::before {
+    content: "";
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    top: 0;
+    height: 3px;
+    background: linear-gradient(120deg, rgba(239, 35, 60, 0.9), rgba(177, 18, 38, 0.85));
+    border-radius: 999px;
+}
 
+.fuel-item > * {
+    position: relative;
+    z-index: 1;
+}
 
+.fuel-item:hover {
+    transform: translateY(-4px);
+}
 
+.fuel-item h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
 
+.fuel-price {
+    margin: 6px 0 0;
+    font-size: 1.9rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+}
 
+.fuel-price span {
+    margin-left: 6px;
+    font-size: 0.9rem;
+    color: rgba(209, 213, 219, 0.78);
+}
+
+.fuel-updated {
+    margin: 0;
+    font-size: 0.7rem;
+    color: rgba(148, 163, 184, 0.75);
+}
+
+.fuel-info,
+.fuel-error {
+    margin: 0;
+    font-size: 0.95rem;
+    text-align: center;
+}
+
+.fuel-info {
+    color: rgba(255, 228, 234, 0.78);
+}
+
+.fuel-error {
+    color: #fda4af;
+}
+
+@media (max-width: 768px) {
+    .fuel-section {
+        padding-inline: clamp(16px, 4vw, 28px);
+    }
+
+    .fuel-card {
+        padding: 26px;
+    }
+
+    .fuel-grid {
+        grid-template-columns: repeat(6, minmax(180px, 1fr));
+        grid-auto-flow: column;
+        gap: 16px;
+    }
+}
+
+.fuel-grid::-webkit-scrollbar {
+    height: 6px;
+}
+
+.fuel-grid::-webkit-scrollbar-thumb {
+    background: rgba(239, 35, 60, 0.55);
+    border-radius: 999px;
+}
+
+.fuel-grid::-webkit-scrollbar-track {
+    background: rgba(15, 16, 20, 0.6);
+}
