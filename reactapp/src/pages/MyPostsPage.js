@@ -1,20 +1,11 @@
 import React, { useEffect, useState, useCallback } from "react";
 import api from "../api/axios";
 import "./managePages.css";
+import { useAuth } from "../api/hooks/AuthContext";
+import { useNavigate } from "react-router-dom";
+import useApi from "../api/hooks/useAPI";
+import { HeartIcon } from "../components/UIicons";
 
-
-const HeartIcon = ({ filled = false, ...props } = {}) => (
-    <svg viewBox="0 0 24 24" fill="none" {...props}>
-        <path
-            d="M12 21s-6.2-4.35-9-7.74C-1.1 9 1.3 4.5 5.5 4.5a4.5 4.5 0 016.5 3.3A4.5 4.5 0 0118.5 4.5c4.2 0 6.6 4.5 2.5 8.76C18.2 16.65 12 21 12 21z"
-            fill={filled ? "currentColor" : "none"}
-            stroke="currentColor"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
-    </svg>
-);
 
 const initialFormState = {
     content: "",
@@ -26,6 +17,16 @@ const initialFormState = {
 };
 
 const MyPostsPage = () => {
+    const api = useApi();
+    const { user } = useAuth();
+    const roleId = user?.role_id || user?.role?.id || null;
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if (!user || ![1, 2].includes(roleId)) {
+            navigate("/login");
+        }
+    }, [user, roleId, navigate]);
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -66,7 +67,6 @@ const MyPostsPage = () => {
             setLoading(false);
         }
     }, []);
-
 
     useEffect(() => {
         fetchPosts();
@@ -130,17 +130,6 @@ const MyPostsPage = () => {
             setSaving(false);
         }
     };
-
-    // if (loading) {
-    //     return (
-    //         <div className="page-shell">
-    //             <section className="page-card narrow">
-    //                 <p className="meta-line">Ucitavanje...</p>
-    //             </section>
-    //         </div>
-    //     );
-    // }
-
 
     return (
         <div className="page-shell">

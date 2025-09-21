@@ -1,25 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import api from "../api/axios";
+import { useAuth } from "../api/hooks/AuthContext";
 import "./authPages.css";
+import { EyeIcon } from "../components/UIicons";
 
-const EyeIcon = ({ crossed = false, ...props } = {}) => (
-  <svg viewBox="0 0 24 24" fill="none" {...props}>
-    <path
-      d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.6" />
-    {crossed ? <line x1="4" y1="4" x2="20" y2="20" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /> : null}
-  </svg>
-);
-
-export default function Login({ setIsLoggedIn }) {
+export default function Login() {
   const nav = useNavigate();
   const loc = useLocation();
+  const { user, login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
@@ -27,11 +15,10 @@ export default function Login({ setIsLoggedIn }) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (sessionStorage.getItem("auth_token") || localStorage.getItem("access_token")) {
-      setIsLoggedIn?.(true);
+    if (user) {
       nav("/", { replace: true });
     }
-  }, [nav, setIsLoggedIn]);
+  }, [user, nav]);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -42,16 +29,7 @@ export default function Login({ setIsLoggedIn }) {
     }
     setLoading(true);
     try {
-      const { data } = await api.post("/api/login", { email, password });
-      if (!data?.access_token) throw new Error("Nema tokena.");
-
-      localStorage.setItem("token", data.access_token);
-      localStorage.setItem("user", JSON.stringify(data.user || null));
-      sessionStorage.setItem("auth_token", data.access_token);
-      sessionStorage.setItem("user", JSON.stringify(data.user || null));
-      if (data.user?.role_id) sessionStorage.setItem("role_id", String(data.user.role_id));
-
-      setIsLoggedIn?.(true);
+      await login(email, password);
       const to = loc.state?.from?.pathname || "/";
       nav(to, { replace: true });
     } catch (err) {
@@ -116,5 +94,3 @@ export default function Login({ setIsLoggedIn }) {
     </div>
   );
 }
-
-

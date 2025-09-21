@@ -2,48 +2,48 @@
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import "./postDetails.css";
+import { useAuth } from "../api/hooks/AuthContext";
+// const getStoredUser = () => {
+//     try {
+//         return (
+//             JSON.parse(sessionStorage.getItem("user")) ||
+//             JSON.parse(localStorage.getItem("user")) ||
+//             null
+//         );
+//     } catch (error) {
+//         return null;
+//     }
+// };
 
-const getStoredUser = () => {
-    try {
-        return (
-            JSON.parse(sessionStorage.getItem("user")) ||
-            JSON.parse(localStorage.getItem("user")) ||
-            null
-        );
-    } catch (error) {
-        return null;
-    }
-};
+// const resolveRoleId = (user) => {
+//     const storedRole = sessionStorage.getItem("role_id");
+//     if (storedRole) {
+//         const parsed = Number(storedRole);
+//         return Number.isNaN(parsed) ? null : parsed;
+//     }
+//     if (user?.role_id != null) {
+//         const parsed = Number(user.role_id);
+//         if (!Number.isNaN(parsed)) {
+//             return parsed;
+//         }
+//     }
+//     if (user?.role?.id != null) {
+//         const parsed = Number(user.role.id);
+//         if (!Number.isNaN(parsed)) {
+//             return parsed;
+//         }
+//     }
+//     return null;
+// };
 
-const resolveRoleId = (user) => {
-    const storedRole = sessionStorage.getItem("role_id");
-    if (storedRole) {
-        const parsed = Number(storedRole);
-        return Number.isNaN(parsed) ? null : parsed;
-    }
-    if (user?.role_id != null) {
-        const parsed = Number(user.role_id);
-        if (!Number.isNaN(parsed)) {
-            return parsed;
-        }
-    }
-    if (user?.role?.id != null) {
-        const parsed = Number(user.role.id);
-        if (!Number.isNaN(parsed)) {
-            return parsed;
-        }
-    }
-    return null;
-};
-
-const getAuthToken = () => {
-    return (
-        sessionStorage.getItem("auth_token") ||
-        localStorage.getItem("access_token") ||
-        localStorage.getItem("token") ||
-        null
-    );
-};
+// const getAuthToken = () => {
+//     return (
+//         sessionStorage.getItem("auth_token") ||
+//         localStorage.getItem("access_token") ||
+//         localStorage.getItem("token") ||
+//         null
+//     );
+// };
 
 const HeartIcon = ({ filled = false, ...props } = {}) => (
     <svg viewBox="0 0 24 24" fill="none" {...props}>
@@ -108,10 +108,12 @@ const PostDetails = () => {
     const openImage = (src) => setActiveImage(src);
     const closeImage = () => setActiveImage(null);
 
-    const storedUser = useMemo(() => getStoredUser(), []);
-    const roleId = useMemo(() => resolveRoleId(storedUser), [storedUser]);
-    const authToken = getAuthToken();
-    const canInteract = Boolean(authToken) && Boolean(storedUser) && roleId != null && [1, 2].includes(roleId);
+    // const storedUser = useMemo(() => getStoredUser(), []);
+    // const roleId = useMemo(() => resolveRoleId(storedUser), [storedUser]);
+    // const authToken = getAuthToken();
+    const { user } = useAuth();
+    const roleId = user?.role_id || user?.role?.id || null;
+    const canInteract = !!user && roleId != null && [1, 2].includes(roleId);
     const canLike = canInteract;
     const canComment = canInteract;
 
@@ -160,8 +162,7 @@ const PostDetails = () => {
             return;
         }
 
-        const token = getAuthToken();
-        if (!token) {
+        if (!user) {
             setCommentError("Morate biti prijavljeni kako biste ostavili komentar.");
             return;
         }
@@ -177,7 +178,7 @@ const PostDetails = () => {
             const created = response.data?.data || response.data || {};
             const normalized = {
                 ...created,
-                user: created.user || storedUser,
+                user: created.user || user,
             };
             setComments((prev) => [...prev, normalized]);
             setCommentValue("");
@@ -252,16 +253,9 @@ const PostDetails = () => {
 
     return (
         <div className="post-details-page">
-            {/* Dugme za nazad skroz levo */}
-            <div style={{ position: "absolute", left: 0, top: 40, zIndex: 10, paddingLeft: 32 }}>
-                <button type="button" className="btn ghost" onClick={() => navigate(-1)}>
-                    Nazad
-                </button>
-            </div>
 
             <section className="post-details-panel">
                 <header className="post-details-header" style={{ flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-                    {/* Autor i vreme u jednom redu, suptilno */}
                     <div style={{
                         fontSize: "1rem",
                         color: "var(--text-muted)",
@@ -277,8 +271,6 @@ const PostDetails = () => {
                         <span style={{ fontWeight: 600 }}>{post.user?.name || "Nepoznat korisnik"}</span>
                         <span style={{ fontSize: "0.95em", color: "rgba(148,163,184,0.78)" }}>- {formatDateTime(post.created_at)}</span>
                     </div>
-                    {/* Auto markirano, veliko, crveni outline */}
-
                     <div
                         style={{
                             fontSize: "1.25rem",
