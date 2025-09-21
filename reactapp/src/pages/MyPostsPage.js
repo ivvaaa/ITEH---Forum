@@ -18,7 +18,6 @@ const initialFormState = {
 
 const MyPostsPage = () => {
     const api = useApi();
-
     const { user } = useAuth();
     const roleId = user?.role_id || user?.role?.id || null;
     const navigate = useNavigate();
@@ -28,8 +27,6 @@ const MyPostsPage = () => {
             navigate("/login");
         }
     }, [user, roleId, navigate]);
-    //console.log("Trenutni user MY post:", user);
-    // console.log("Token iz localStorage:", localStorage.getItem('token'));
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -70,7 +67,6 @@ const MyPostsPage = () => {
             setLoading(false);
         }
     }, []);
-
 
     useEffect(() => {
         fetchPosts();
@@ -134,17 +130,6 @@ const MyPostsPage = () => {
             setSaving(false);
         }
     };
-
-    // if (loading) {
-    //     return (
-    //         <div className="page-shell">
-    //             <section className="page-card narrow">
-    //                 <p className="meta-line">Ucitavanje...</p>
-    //             </section>
-    //         </div>
-    //     );
-    // }
-
 
     return (
         <div className="page-shell">

@@ -37,11 +37,6 @@ const HomePage = () => {
   console.log("Trenutni user:", user);
   console.log("Token iz localStorage:", localStorage.getItem('token'));
 
-
-  // //const storedUser = getStoredUser();
-  // const roleId = resolveRoleId(storedUser);
-  // const authToken = getAuthToken();
-  // const canLike = Boolean(authToken) && Boolean(storedUser) && roleId != null && [1, 2].includes(roleId);
   const roleId = user?.role_id || user?.role?.id || null;
   const canLike = !!user && roleId != null && [1, 2].includes(roleId);
 
@@ -145,7 +140,6 @@ const HomePage = () => {
 
   useEffect(() => {
     fetchPosts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSearch = (event) => {
@@ -192,16 +186,6 @@ const HomePage = () => {
   };
 
   const handleCreatePost = () => {
-    // const sessionToken = typeof window !== 'undefined' ? sessionStorage.getItem('auth_token') : null;
-    // const canCreate = Boolean(sessionToken) && roleId != null && [1, 2].includes(roleId);
-
-    // if (!canCreate) {
-    //   window.alert('Morate se ulogovati.');
-    //   navigate('/login');
-    //   return;
-    // }
-
-    // navigate('/create');
     if (!user || roleId == null || ![1, 2].includes(roleId)) {
       window.alert('Morate se ulogovati.');
       navigate('/login');
@@ -525,50 +509,6 @@ const HomePage = () => {
     </div>
   );
 };
-
-// const getStoredUser = () => {
-//   try {
-//     return (
-//       JSON.parse(sessionStorage.getItem("user")) ||
-//       JSON.parse(localStorage.getItem("user")) ||
-//       null
-//     );
-//   } catch (error) {
-//     return null;
-//   }
-// };
-
-// const resolveRoleId = (user) => {
-//   const storedRole = sessionStorage.getItem("role_id");
-//   if (storedRole) {
-//     const parsed = Number(storedRole);
-//     if (!Number.isNaN(parsed)) {
-//       return parsed;
-//     }
-//   }
-//   if (user?.role_id != null) {
-//     const parsed = Number(user.role_id);
-//     if (!Number.isNaN(parsed)) {
-//       return parsed;
-//     }
-//   }
-//   if (user?.role?.id != null) {
-//     const parsed = Number(user.role.id);
-//     if (!Number.isNaN(parsed)) {
-//       return parsed;
-//     }
-//   }
-//   return null;
-// };
-
-// const getAuthToken = () => {
-//   return (
-//     sessionStorage.getItem("auth_token") ||
-//     localStorage.getItem("access_token") ||
-//     localStorage.getItem("token") ||
-//     null
-//   );
-// };
 
 export default HomePage;
 

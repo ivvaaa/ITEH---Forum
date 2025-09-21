@@ -13,9 +13,7 @@ export default function Navbar() {
   const handleLogout = async () => {
     try {
       await api.post("/api/logout");
-    } catch {
-      // ignore logout errors so UI can proceed
-    }
+    } catch { }
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     sessionStorage.removeItem("auth_token");
@@ -24,8 +22,7 @@ export default function Navbar() {
     logout();
     nav("/");
   };
-
-  const navLinkClass = ({ isActive }) => `nav-link${isActive ? " active" : ""}`;
+  // const navLinkClass = ({ isActive }) => `nav-link${isActive ? " active" : ""}`;
   const navGhostButton = ({ isActive }) => `nav-btn ghost${isActive ? " active" : ""}`;
 
   return (

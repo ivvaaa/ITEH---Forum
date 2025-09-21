@@ -162,11 +162,6 @@ const PostDetails = () => {
             return;
         }
 
-        // const token = getAuthToken();
-        // if (!token) {
-        //     setCommentError("Morate biti prijavljeni kako biste ostavili komentar.");
-        //     return;
-        // }
         if (!user) {
             setCommentError("Morate biti prijavljeni kako biste ostavili komentar.");
             return;
@@ -258,16 +253,9 @@ const PostDetails = () => {
 
     return (
         <div className="post-details-page">
-            {/* Dugme za nazad skroz levo */}
-            <div style={{ position: "absolute", left: 0, top: 40, zIndex: 10, paddingLeft: 32 }}>
-                <button type="button" className="btn ghost" onClick={() => navigate(-1)}>
-                    Nazad
-                </button>
-            </div>
 
             <section className="post-details-panel">
                 <header className="post-details-header" style={{ flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-                    {/* Autor i vreme u jednom redu, suptilno */}
                     <div style={{
                         fontSize: "1rem",
                         color: "var(--text-muted)",
@@ -283,8 +271,6 @@ const PostDetails = () => {
                         <span style={{ fontWeight: 600 }}>{post.user?.name || "Nepoznat korisnik"}</span>
                         <span style={{ fontSize: "0.95em", color: "rgba(148,163,184,0.78)" }}>- {formatDateTime(post.created_at)}</span>
                     </div>
-                    {/* Auto markirano, veliko, crveni outline */}
-
                     <div
                         style={{
                             fontSize: "1.25rem",
