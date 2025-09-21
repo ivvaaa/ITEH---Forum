@@ -1,25 +1,16 @@
 import React from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import { useAuth } from "../api/hooks/AuthContext";
 import "./navbar.css";
 
-function getUser() {
-  try {
-    return (
-      JSON.parse(localStorage.getItem("user")) ||
-      JSON.parse(sessionStorage.getItem("user")) ||
-      null
-    );
-  } catch {
-    return null;
-  }
-}
-
-export default function Navbar({ isLoggedIn, setIsLoggedIn, roleId }) {
+export default function Navbar() {
   const nav = useNavigate();
-  const user = getUser();
+  const { user, logout } = useAuth();
+  const roleId = user?.role_id || user?.role?.id || null;
+  const isLoggedIn = !!user;
 
-  const logout = async () => {
+  const handleLogout = async () => {
     try {
       await api.post("/api/logout");
     } catch {
@@ -30,7 +21,7 @@ export default function Navbar({ isLoggedIn, setIsLoggedIn, roleId }) {
     sessionStorage.removeItem("auth_token");
     sessionStorage.removeItem("user");
     sessionStorage.removeItem("role_id");
-    setIsLoggedIn(false);
+    logout();
     nav("/");
   };
 
@@ -63,7 +54,7 @@ export default function Navbar({ isLoggedIn, setIsLoggedIn, roleId }) {
                 </NavLink>
               )}
               <span className="nav-user">{user?.name ? `Zdravo, ${user.name}` : ""}</span>
-              <button type="button" className="nav-btn outline" onClick={logout}>
+              <button type="button" className="nav-btn outline" onClick={handleLogout}>
                 Odjava
               </button>
             </>
@@ -82,4 +73,3 @@ export default function Navbar({ isLoggedIn, setIsLoggedIn, roleId }) {
     </header>
   );
 }
-

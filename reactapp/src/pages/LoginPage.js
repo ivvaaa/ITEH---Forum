@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import api from "../api/axios";
+import { useAuth } from "../api/hooks/AuthContext";
 import "./authPages.css";
 
 const EyeIcon = ({ crossed = false, ...props } = {}) => (
@@ -17,9 +17,11 @@ const EyeIcon = ({ crossed = false, ...props } = {}) => (
   </svg>
 );
 
-export default function Login({ setIsLoggedIn }) {
+export default function Login() {
   const nav = useNavigate();
   const loc = useLocation();
+  const { user, login } = useAuth();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
@@ -27,11 +29,10 @@ export default function Login({ setIsLoggedIn }) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (sessionStorage.getItem("auth_token") || localStorage.getItem("access_token")) {
-      setIsLoggedIn?.(true);
+    if (user) {
       nav("/", { replace: true });
     }
-  }, [nav, setIsLoggedIn]);
+  }, [user, nav]);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -42,16 +43,7 @@ export default function Login({ setIsLoggedIn }) {
     }
     setLoading(true);
     try {
-      const { data } = await api.post("/api/login", { email, password });
-      if (!data?.access_token) throw new Error("Nema tokena.");
-
-      localStorage.setItem("token", data.access_token);
-      localStorage.setItem("user", JSON.stringify(data.user || null));
-      sessionStorage.setItem("auth_token", data.access_token);
-      sessionStorage.setItem("user", JSON.stringify(data.user || null));
-      if (data.user?.role_id) sessionStorage.setItem("role_id", String(data.user.role_id));
-
-      setIsLoggedIn?.(true);
+      await login(email, password);
       const to = loc.state?.from?.pathname || "/";
       nav(to, { replace: true });
     } catch (err) {
@@ -116,5 +108,3 @@ export default function Login({ setIsLoggedIn }) {
     </div>
   );
 }
-
-

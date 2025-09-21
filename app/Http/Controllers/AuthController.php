@@ -13,58 +13,52 @@ use Illuminate\Support\Facades\Storage;
 class AuthController extends Controller
 {
     public function register(Request $request)
-{
-    // If you send a file, use form-data; if JSON, omit profile_photo
-    $rules = [
-        'name'                  => ['required','string','max:255'],
-        'email'                 => ['required','string','email','max:255','unique:users,email'],
-        'password'              => ['required','string','min:8','confirmed'],
-        // role_id optional: default to 'viewer' if missing
-        'role_id'               => ['nullable','integer','exists:roles,id'],
-        'interests'             => ['nullable','array'],             // e.g. ["cars","music"]
-        'profile_photo'         => ['nullable','image','mimes:jpeg,png,jpg,gif,svg','max:2048'],
-        'bio'                   => ['nullable','string','max:500'],
-        'birthdate'             => ['nullable','date'],
-    ];
+    {
+        $rules = [
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'role_id' => ['nullable', 'integer', 'exists:roles,id'],
+            'interests' => ['nullable', 'array'],
+            'profile_photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,svg', 'max:2048'],
+            'bio' => ['nullable', 'string', 'max:500'],
+            'birthdate' => ['nullable', 'date'],
+        ];
 
-    $validated = $request->validate($rules);
+        $validated = $request->validate($rules);
 
-    // Resolve role_id: use provided or default to 'viewer'
-    if (empty($validated['role_id'])) {
-        $validated['role_id'] = \App\Models\Role::where('name','viewer')->value('id');
+        if (empty($validated['role_id'])) {
+            $validated['role_id'] = \App\Models\Role::where('name', 'viewer')->value('id');
+        }
+
+        $profilePhotoPath = null;
+        if ($request->hasFile('profile_photo')) {
+            $profilePhotoPath = $request->file('profile_photo')->store('profile_photos', 'public');
+        }
+
+        // Create user
+        $user = \App\Models\User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
+            'role_id' => $validated['role_id'],
+            'interests' => $validated['interests'] ?? null,
+            'profile_photo' => $profilePhotoPath,
+            'bio' => $validated['bio'] ?? null,
+            'birthdate' => $validated['birthdate'] ?? null,
+        ]);
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Registration successful.',
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+            'user' => $user,
+        ], 201);
     }
-
-    // Handle profile photo upload (optional)
-    $profilePhotoPath = null;
-    if ($request->hasFile('profile_photo')) {
-        // Ensure you've run: php artisan storage:link
-        $profilePhotoPath = $request->file('profile_photo')->store('profile_photos', 'public');
-    }
-
-    // Create user
-    $user = \App\Models\User::create([
-        'name'          => $validated['name'],
-        'email'         => $validated['email'],
-        'password'      => \Illuminate\Support\Facades\Hash::make($validated['password']),
-        'role_id'       => $validated['role_id'],
-        'interests'     => $validated['interests'] ?? null,   // column should be JSON nullable
-        'profile_photo' => $profilePhotoPath,
-        'bio'           => $validated['bio'] ?? null,
-        'birthdate'     => $validated['birthdate'] ?? null,
-    ]);
-
-    // Optionally, return a token so the user is logged in right away
-    $token = $user->createToken('auth_token')->plainTextToken;
-
-    return response()->json([
-        'message'      => 'Registration successful.',
-        'access_token' => $token,
-        'token_type'   => 'Bearer',
-        'user'         => $user,
-    ], 201);
-}
-//----------------------------------------------------------------------------------
-public function login(Request $request)
+    //----------------------------------------------------------------------------------
+    public function login(Request $request)
     {
         // Validacija ulaznih podataka
         $request->validate([
@@ -88,12 +82,12 @@ public function login(Request $request)
         return response()->json([
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'user_id'=>$user->id,
-            'user'=>$user,
+            'user_id' => $user->id,
+            'user' => $user,
         ]);
     }
     //----------------------------------------------------------------------------------
-    
+
     public function logout(Request $request)
     {
         // Brisanje trenutnog tokena korisnika
@@ -129,23 +123,23 @@ public function login(Request $request)
             return response()->json($validator->errors(), 422);
         }
 
-        // SaÄuvajte novu profilnu sliku ako je postavljena
+        // sacuvaj novu profilnu sliku ako je postavljena
         if ($request->hasFile('profile_photo')) {
             // Brisanje stare slike ako postoji
             if ($user->profile_photo) {
                 Storage::disk('public')->delete($user->profile_photo);
             }
-            // SaÄuvajte novu sliku
+            // sacuvaj novu sliku
             $user->profile_photo = $request->file('profile_photo')->store('profile_photos', 'public');
         }
 
-        // AÅ¾uriranje podataka korisnika
+        // Ažuriranje podataka korisnika
         $user->name = $request->name;
         $user->interests = $request->interests;
         $user->bio = $request->bio;
         $user->birthdate = $request->birthdate;
 
-        // AÅ¾uriranje lozinke ako je postavljena nova
+        // Ažuriranje lozinke ako je postavljena nova
         if ($request->password) {
             $user->password = bcrypt($request->password);
         }
@@ -157,7 +151,5 @@ public function login(Request $request)
             'user' => $user,
         ]);
     }
-
-    //----------------------------------------------------------------------------------
 
 }

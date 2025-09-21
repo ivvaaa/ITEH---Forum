@@ -160,9 +160,6 @@ class PostController extends Controller
         return new PostResource($post);
     }
 
-    /**
-     * Display the specified post.
-     */
     public function show(Request $request, $id)
     {
         $post = Post::with([
@@ -187,9 +184,7 @@ class PostController extends Controller
         return new PostResource($post);
     }
 
-    /**
-     * Update the specified post in storage.
-     */
+
     public function update(Request $request, $id)
     {
         $incomingCategories = null;
@@ -270,7 +265,7 @@ class PostController extends Controller
         if ($post->user_id !== ($user->id ?? null) && $roleId !== 1) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
-// Prvo obrisi komentare vezane za post
+        // Prvo obrisi komentare vezane za post
         Comment::where('post_id', $post->id)->delete();
 
         // Onda obrisi post

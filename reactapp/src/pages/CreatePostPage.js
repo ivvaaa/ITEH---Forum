@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import api from "../api/axios";
 import { useNavigate } from "react-router-dom";
-
+import { useAuth } from "../api/hooks/AuthContext";
 
 const CATEGORY_OPTIONS = [
     { value: "elektricni_automobili", label: "Elektricni automobili" },
@@ -11,6 +11,11 @@ const CATEGORY_OPTIONS = [
 ];
 
 export default function CreatePostPage() {
+    const { user } = useAuth();
+    const roleId = user?.role_id || user?.role?.id || null;
+    const navigate = useNavigate();
+
+    console.log("user:", user, "roleId:", roleId);
     const [content, setContent] = useState("");
     const [carMake, setCarMake] = useState("");
     const [carModel, setCarModel] = useState("");
@@ -19,7 +24,17 @@ export default function CreatePostPage() {
     const [images, setImages] = useState([]);
     const [other, setOther] = useState("");
     const [error, setError] = useState("");
-    const navigate = useNavigate();
+
+    useEffect(() => {
+        if (user === undefined) return; // čekaj dok se user ne učita
+        if (!user || ![1, 2].includes(roleId)) {
+            navigate("/login");
+        }
+    }, [user, roleId, navigate]);
+
+    if (user === undefined) {
+        return <div>Učitavanje...</div>;
+    }
 
     const handleImageChange = (e) => {
         setImages([...e.target.files]);

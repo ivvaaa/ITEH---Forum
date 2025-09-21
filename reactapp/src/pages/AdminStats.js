@@ -1,10 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import api from "../api/axios";
 import "./adminStats.css";
+import { useAuth } from "../api/hooks/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const INITIAL_FILTERS = { search: "", role: "" };
 
 const AdminStats = () => {
+  const { user } = useAuth();
+  const roleId = user?.role_id || user?.role?.id || null;
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!user || roleId !== 1) {
+      navigate("/login");
+    }
+  }, [user, roleId, navigate]);
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [filters, setFilters] = useState({ ...INITIAL_FILTERS });
