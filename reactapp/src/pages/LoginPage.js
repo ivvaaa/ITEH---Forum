@@ -2,26 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../api/hooks/AuthContext";
 import "./authPages.css";
-
-const EyeIcon = ({ crossed = false, ...props } = {}) => (
-  <svg viewBox="0 0 24 24" fill="none" {...props}>
-    <path
-      d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.6" />
-    {crossed ? <line x1="4" y1="4" x2="20" y2="20" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /> : null}
-  </svg>
-);
+import { EyeIcon } from "../components/UIicons";
 
 export default function Login() {
   const nav = useNavigate();
   const loc = useLocation();
   const { user, login } = useAuth();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
