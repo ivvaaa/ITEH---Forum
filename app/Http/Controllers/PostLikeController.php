@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Post;
 use Illuminate\Http\Request;
+use App\Notifications\PostLikedNotification;
+
 
 class PostLikeController extends Controller
 {
@@ -23,6 +25,17 @@ class PostLikeController extends Controller
             'user_id' => $user->id,
         ]);
 
+        $post->loadMissing('user');
+        $owner = $post->user;
+
+        if ($owner && $owner->id !== $user->id) {
+            $owner->notify(new PostLikedNotification(
+                postId: $post->id,
+                postTitle: $post->title ?? 'your post',
+                likerName: $user->name ?? 'Someone'
+            ));
+        }
+
         $post->loadCount('likes');
 
         return response()->json([
@@ -30,6 +43,7 @@ class PostLikeController extends Controller
             'likes_count' => $post->likes_count,
         ]);
     }
+
 
     public function destroy(Request $request, Post $post)
     {

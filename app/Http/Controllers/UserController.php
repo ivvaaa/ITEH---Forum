@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Role;
 use Illuminate\Http\Request;
+use App\Notifications\AccountDeletedNotification; 
+
 
 class UserController extends Controller
 {
@@ -115,20 +117,31 @@ class UserController extends Controller
      * DELETE /api/users/{id}
      * Remove a user unless the admin is targeting their own account.
      */
-    public function destroy($id)
-    {
-        $user = User::findOrFail($id);
-        if (auth()->id() === $user->id) {
+
+        public function destroy(Request $request, $id)
+        {
+            $user = User::findOrFail($id);
+
+            if (auth()->id() === $user->id) {
+                return response()->json([
+                    'message' => 'Ne moÅ¾ete obrisati sopstveni nalog.',
+                ], 422);
+            }
+
+            // Optional reason from admin UI
+            $reason = $request->input('reason');
+
+            // Notify BEFORE deleting
+            $user->notify(new AccountDeletedNotification($reason));
+
+            $user->delete();
+
             return response()->json([
-                'message' => 'Ne možete obrisati sopstveni nalog.',
-            ], 422);
+                'message' => 'Korisnik je obrisan.',
+                'id' => $user->id,
+            ]);
         }
-        $user->delete();
-        return response()->json([
-            'message' => 'Korisnik je obrisan.',
-            'id' => $user->id,
-        ]);
-    }
+
 
     /**
      * POST /api/users/{id}/assign-role

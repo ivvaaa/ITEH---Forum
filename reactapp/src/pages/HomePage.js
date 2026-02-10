@@ -25,6 +25,16 @@ const normalizePostCategories = (value) => {
   return [];
 };
 
+// Debounce hook
+function useDebounce(value, ms = 300) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), ms);
+    return () => clearTimeout(t);
+  }, [value, ms]);
+  return debounced;
+}
+
 const HomePage = () => {
   const [posts, setPosts] = useState([]);
   const [search, setSearch] = useState("");
@@ -33,6 +43,7 @@ const HomePage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [pendingLikes, setPendingLikes] = useState([]);
+  const [sort, setSort] = useState("relevance");
   const { user, login, logout } = useAuth();
   console.log("Trenutni user:", user);
   console.log("Token iz localStorage:", localStorage.getItem('token'));
@@ -115,7 +126,7 @@ const HomePage = () => {
       return [];
     }
 
-    return [...posts].sort((first, second) => {
+    const sorted = [...posts].sort((first, second) => {
       const rankA = computeCategoryRank(first.categories ?? first.category);
       const rankB = computeCategoryRank(second.categories ?? second.category);
 
@@ -128,7 +139,12 @@ const HomePage = () => {
 
       return createdB - createdA;
     });
-  }, [posts, categoryOrderMap]);
+
+    // Paginate: show only posts for current page
+    const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
+    const endIndex = startIndex + POSTS_PER_PAGE;
+    return sorted.slice(startIndex, endIndex);
+  }, [posts, categoryOrderMap, currentPage]);
 
   const handleReset = () => {
     setSearch("");
@@ -142,24 +158,75 @@ const HomePage = () => {
     fetchPosts();
   }, []);
 
+  // Debounce search inputs
+  const debouncedSearch = useDebounce(search, 300);
+  const debouncedCarMake = useDebounce(carMake, 300);
+
+  // Always use Meilisearch - no toggle
+  useEffect(() => {
+    const searchMeili = async () => {
+      try {
+        // If search is empty and no category filter, load paginated posts
+        if (debouncedSearch.trim() === "" && debouncedCarMake.trim() === "" && selectedCategories[0] === DEFAULT_CATEGORY) {
+          const res = await api.get("/api/posts", { params: { per_page: 3, page: currentPage } });
+          setPosts(res.data.data || []);
+          setLastPage(res.data.meta?.last_page ?? 1);
+          return;
+        }
+
+        const res = await api.get("/api/search/posts", {
+          params: { 
+            q: debouncedSearch,
+            category: selectedCategories[0] !== DEFAULT_CATEGORY ? selectedCategories[0] : "",
+            sort,
+          },
+        });
+        
+        console.log("Meilisearch hits:", res.data.hits);
+        
+        if (res.data.hits && res.data.hits.length > 0) {
+          const ids = res.data.hits.map(h => h.id);
+          console.log("IDs to fetch:", ids);
+          
+          // For search results, paginate if more than 3 results
+          const perPage = ids.length > 3 ? 3 : ids.length;
+          const fullRes = await api.get("/api/posts", {
+            params: { 
+              ids: ids.join(','),
+              per_page: 1000,
+              car_make: debouncedCarMake, // Add car make filter
+            },
+          });
+          console.log("Backend returned posts:", fullRes.data.data);
+          setPosts(fullRes.data.data || []);
+          
+          // Set lastPage based on number of results
+          const totalResults = ids.length;
+          const calculatedLastPage = Math.ceil(totalResults / perPage);
+          setLastPage(calculatedLastPage);
+        } else {
+          setPosts([]);
+          setLastPage(1);
+        }
+        setCurrentPage(1);
+      } catch (error) {
+        console.error("Search error:", error);
+        setPosts([]);
+      }
+    };
+
+    searchMeili();
+  }, [debouncedSearch, debouncedCarMake, selectedCategories, sort]);
+
   const handleSearch = (event) => {
     event.preventDefault();
-    setCurrentPage(1);
-    fetchPosts({ query: search, carMakeValue: carMake, categoriesValue: selectedCategories, page: 1 });
-  };
-
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-    fetchPosts({ query: search, carMakeValue: carMake, categoriesValue: selectedCategories, page });
+    // Meilisearch already triggered by useEffect on search change
   };
 
   const handleCategoryToggle = (value) => {
     setSelectedCategories((prev) => {
       if (value === DEFAULT_CATEGORY) {
-        const nextCategories = [DEFAULT_CATEGORY];
-        setCurrentPage(1);
-        fetchPosts({ query: search, carMakeValue: carMake, categoriesValue: nextCategories, page: 1 });
-        return nextCategories;
+        return [DEFAULT_CATEGORY];
       }
 
       const filtered = prev.filter((item) => item !== DEFAULT_CATEGORY);
@@ -175,10 +242,12 @@ const HomePage = () => {
         next = [DEFAULT_CATEGORY];
       }
 
-      setCurrentPage(1);
-      fetchPosts({ query: search, carMakeValue: carMake, categoriesValue: next, page: 1 });
       return next;
     });
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
   };
 
   const handleViewMore = (postId) => {
@@ -186,7 +255,7 @@ const HomePage = () => {
   };
 
   const handleCreatePost = () => {
-    if (!user || roleId == null || ![1, 2].includes(roleId)) {
+    if (!user) {
       window.alert('Morate se ulogovati.');
       navigate('/login');
       return;

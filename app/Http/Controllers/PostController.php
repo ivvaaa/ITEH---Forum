@@ -8,8 +8,11 @@ use App\Models\Comment;
 use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use App\Notifications\PostDeletedNotification;
+
 
 class PostController extends Controller
 {
@@ -18,9 +21,18 @@ class PostController extends Controller
      */
     public function index(Request $request)
     {
+        $query = Post::query();
+
+        // Filter by IDs (from Meilisearch)
+        $meilisearchIds = null;
+        if ($request->has('ids')) {
+            $meilisearchIds = array_map('intval', array_filter(explode(',', $request->query('ids'))));
+            $query->whereIn('id', $meilisearchIds);
+        }
+
         $perPage = (int) $request->input('per_page', 3);
 
-        $query = Post::with(['user', 'car'])
+        $query = $query->with(['user', 'car'])
             ->withCount('likes');
 
         if ($request->user()) {
@@ -73,10 +85,25 @@ class PostController extends Controller
             });
         }
 
-        $query->orderByRaw($this->buildCategoryOrderCase())
-            ->orderByDesc('created_at');
+        // Only apply category ordering if NOT from Meilisearch
+        if (!$meilisearchIds) {
+            $query->orderByRaw($this->buildCategoryOrderCase())
+                ->orderByDesc('created_at');
+        } else {
+            // Preserve Meilisearch order using FIELD()
+            $idList = implode(',', $meilisearchIds);
+            $query->orderByRaw("FIELD(id, $idList)");
+        }
 
-        return PostResource::collection($query->paginate($perPage));
+        $result = $query->paginate($perPage);
+        
+        // Debug: Log what was returned
+        if ($meilisearchIds) {
+            \Log::debug('Meilisearch IDs requested', ['ids' => $meilisearchIds]);
+            \Log::debug('Posts returned', ['posts' => $result->pluck('id')->toArray()]);
+        }
+
+        return PostResource::collection($result);
     }
 
     private function buildCategoryOrderCase(): string
@@ -110,6 +137,15 @@ class PostController extends Controller
 
     public function store(Request $request)
     {
+        // Quick diagnostic to inspect auth context on failing requests
+        Log::debug('POST /api/posts auth snapshot', [
+            'auth_check' => Auth::check(),
+            'auth_id' => Auth::id(),
+            'sanctum_user' => optional($request->user('sanctum'))->id,
+            'authorization' => $request->header('Authorization'),
+            'cookies' => $request->cookies->all(),
+        ]);
+
         $request->merge([
             'categories' => $this->normalizeCategories(
                 $request->input('categories', $request->input('category'))
@@ -255,23 +291,42 @@ class PostController extends Controller
         return new PostResource($post->fresh(['user', 'car']));
     }
 
-    public function destroy($id)
-    {
-        $post = Post::findOrFail($id);
+            public function destroy(Request $request, $id)
+        {
+            $post = Post::with('user')->findOrFail($id);
 
-        $user = Auth::user();
-        $roleId = (int) ($user->role_id ?? 0);
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json(['message' => 'Unauthenticated'], 401);
+            }
 
-        if ($post->user_id !== ($user->id ?? null) && $roleId !== 1) {
-            return response()->json(['message' => 'Forbidden'], 403);
+            $roleId = (int) ($user->role_id ?? 0);
+
+            if ($post->user_id !== $user->id && $roleId !== 1) {
+                return response()->json(['message' => 'Forbidden'], 403);
+            }
+
+            // If admin/mod is deleting someone else's post -> email the owner
+            $owner = $post->user;
+            $isOwnerDeletingOwnPost = ($owner && $owner->id === $user->id);
+
+            // Optional reason (if you send it from frontend)
+            $reason = $request->input('reason');
+
+            if ($owner && !$isOwnerDeletingOwnPost) {
+                $owner->notify(new PostDeletedNotification(
+                    postTitle: mb_substr((string) $post->content, 0, 60) . '...',
+                    reason: $reason
+                ));
+            }
+
+            // First delete related comments
+            Comment::where('post_id', $post->id)->delete();
+
+            // Then delete post
+            $post->delete();
+
+            return response()->json(['message' => 'Post and related comments deleted successfully.']);
         }
-        // Prvo obrisi komentare vezane za post
-        Comment::where('post_id', $post->id)->delete();
 
-        // Onda obrisi post
-        $post->delete();
-
-        return response()->json(['message' => 'Post and related comments deleted successfully.']);
-    }
 }
-

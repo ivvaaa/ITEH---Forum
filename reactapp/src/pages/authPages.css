@@ -152,6 +152,17 @@
     box-shadow: 0 10px 25px rgba(239, 35, 60, 0.25);
 }
 
+.auth-button.ghost {
+    background: transparent;
+    border: 1px solid rgba(239, 35, 60, 0.45);
+    color: var(--text-primary);
+}
+
+.auth-button.ghost:hover:not(:disabled) {
+    box-shadow: none;
+    background: rgba(239, 35, 60, 0.12);
+}
+
 .auth-button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
@@ -183,4 +194,3 @@
         border-radius: 26px;
     }
 }
-

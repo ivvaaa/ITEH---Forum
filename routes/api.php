@@ -7,12 +7,17 @@ use App\Http\Controllers\CarController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\PostLikeController;
+use App\Http\Controllers\AiChatController;
+use App\Http\Controllers\SearchController;
 
 // Public auth
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::apiResource('posts', PostController::class)->only(['index', 'show']);
+Route::middleware(['throttle:30,1'])->post('/ai/chat', [AiChatController::class, 'chat']);
 
+
+Route::get('/search/posts', [SearchController::class, 'posts']);
 
 // Public read-only posts (adjust if you want protected)
 // Route::apiResource('posts', PostController::class)->only(['index','show']);
@@ -24,10 +29,12 @@ Route::post('/reset-password', [PasswordResetController::class, 'reset']);
 Route::get('reset-password/{token}', function ($token) {
     return view('auth.reset-password', ['token' => $token]);
 })->name('password.reset');
+Route::post('/auth/exchange', [AuthController::class, 'exchangeGoogleCode']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'userInfo']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/auth/logout', [AuthController::class, 'logout']);
 
     Route::apiResource('cars', CarController::class);
     Route::apiResource('comments', CommentController::class);
@@ -49,7 +56,6 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     //Route::apiResource('posts', PostController::class)->only(['index', 'show']);
 
 });
-
 
 
 

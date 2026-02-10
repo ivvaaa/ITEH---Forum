@@ -4,6 +4,8 @@ import { useAuth } from "../api/hooks/AuthContext";
 import "./authPages.css";
 import { EyeIcon } from "../components/UIicons";
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
 export default function Login() {
   const nav = useNavigate();
   const loc = useLocation();
@@ -37,6 +39,10 @@ export default function Login() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleLogin = () => {
+    window.location.href = `${API_BASE}/auth/google/redirect`;
   };
 
   return (
@@ -84,6 +90,9 @@ export default function Login() {
 
           <button type="submit" className="auth-button" disabled={loading}>
             {loading ? "Prijava..." : "Uloguj se"}
+          </button>
+          <button type="button" className="auth-button ghost" onClick={handleGoogleLogin}>
+            Nastavi sa Google
           </button>
         </form>
 

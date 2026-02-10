@@ -6,7 +6,8 @@ const FEED_URLS = [
   "https://www.carscoops.com/feed/",
 ];
 
-const PROXY_PREFIX = "https://api.allorigins.win/raw?url=";
+// Koristi bolji, pouzdaniji CORS proxy
+const PROXY_PREFIX = "https://corsproxy.io/?";
 
 const stripHtml = (input = "") => input.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 

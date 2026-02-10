@@ -1,23 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 import { AuthProvider } from "./api/hooks/AuthContext";
 import HomePage from './pages/HomePage';
-import Register from './pages/RegisterPage';
-import Login from './pages/LoginPage';
-import CreatePostPage from './pages/CreatePostPage';
+import RegisterPage from './pages/RegisterPage';
+import LoginPage from './pages/LoginPage';
 import AdminStats from './pages/AdminStats';
 import MyPostsPage from './pages/MyPostsPage';
+import CreatePostPage from './pages/CreatePostPage';
 import Navbar from './components/Navbar';
+import GoogleAuthFinish from './pages/GoogleAuthFinish';
 import { useAuth } from "./api/hooks/AuthContext";
 import PostDetails from './pages/PostDetails';
+import ChatWidget from "./components/ChatWidget";
 
 
 function AppRoutes() {
   const { user } = useAuth();
+  const [chatOpen, setChatOpen] = useState(false);
+  
   const roleId = user?.role_id || user?.role?.id || null;
   const isLoggedIn = !!user;
-  console.log("isLoggedIn:", isLoggedIn, "roleId:", roleId);
 
   return (
     <>
@@ -26,6 +29,9 @@ function AppRoutes() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/post/:id" element={<PostDetails />} />
+          <Route path="/auth/callback" element={<GoogleAuthFinish />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           {isLoggedIn ? (
             <>
               {roleId == 1 && (
@@ -40,22 +46,46 @@ function AppRoutes() {
             </>
           ) : (
             <>
-              <Route path="/register" element={<Register />} />
-              <Route path="/login" element={<Login />} />
+              {/* login/register already defined above so we keep only guest-only routes here if needed */}
             </>
           )}
         </Routes>
       </div>
+      
+      {/* AI Chat Widget - vidljiv samo za ulogovane korisnike */}
+      {isLoggedIn && (
+        <ChatWidget 
+          apiBaseUrl={import.meta.env.VITE_API_BASE_URL || ""} 
+          isOpen={chatOpen}
+          onOpenChange={setChatOpen}
+        />
+      )}
     </>
+  );
+}
+
+function AppContent() {
+  const { user } = useAuth();
+  const [chatOpen, setChatOpen] = useState(false);
+
+  // Close chat when user logs out
+  React.useEffect(() => {
+    if (!user) {
+      setChatOpen(false);
+    }
+  }, [user]);
+
+  return (
+    <Router>
+      <AppRoutes />
+    </Router>
   );
 }
 
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <AppRoutes />
-      </Router>
+      <AppContent />
     </AuthProvider>
   );
 }

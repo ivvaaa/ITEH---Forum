@@ -4,6 +4,8 @@ import axios from "axios";
 import "./authPages.css";
 import { EyeIcon } from "../components/UIicons";
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+
 const Register = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -53,6 +55,10 @@ const Register = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleSignup = () => {
+    window.location.href = `${API_BASE}/auth/google/redirect`;
   };
 
   return (
@@ -129,6 +135,9 @@ const Register = () => {
           <button type="submit" className="auth-button" disabled={loading}>
             {loading ? "Registracija..." : "Registruj se"}
           </button>
+          <button type="button" className="auth-button ghost" onClick={handleGoogleSignup}>
+            Nastavi sa Google
+          </button>
         </form>
 
         <p className="auth-footer">
@@ -140,5 +149,4 @@ const Register = () => {
 };
 
 export default Register;
-
 

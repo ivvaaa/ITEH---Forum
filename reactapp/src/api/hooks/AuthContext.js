@@ -10,12 +10,18 @@ export function AuthProvider({ children }) {
         return raw ? JSON.parse(raw) : null;
     });
 
+    const setAuthFromToken = (token, userData) => {
+        localStorage.setItem("token", token);
+        sessionStorage.setItem("auth_token", token); // matches axios fallback
+        localStorage.setItem("user", JSON.stringify(userData));
+        sessionStorage.setItem("user", JSON.stringify(userData));
+        setUser(userData);
+    };
+
     const login = async (email, password) => {
         const { data } = await api.post("/api/login", { email, password });
         console.log("Login response:", data);
-        localStorage.setItem("token", data.access_token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-        setUser(data.user);
+        setAuthFromToken(data.access_token, data.user);
         return data.user;
     };
 
@@ -29,7 +35,7 @@ export function AuthProvider({ children }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout }}>
+        <AuthContext.Provider value={{ user, login, logout, setAuthFromToken }}>
             {children}
         </AuthContext.Provider>
     );

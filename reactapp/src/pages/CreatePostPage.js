@@ -22,8 +22,11 @@ export default function CreatePostPage() {
     const [carYear, setCarYear] = useState("");
     const [categories, setCategories] = useState([CATEGORY_OPTIONS[0].value]);
     const [images, setImages] = useState([]);
+    const [imagePreviews, setImagePreviews] = useState([]);
     const [other, setOther] = useState("");
     const [error, setError] = useState("");
+
+    const MAX_FILE_SIZE = 2048 * 1024; // 2MB in bytes
 
     useEffect(() => {
         if (user === undefined) return; // čekaj dok se user ne učita
@@ -37,7 +40,37 @@ export default function CreatePostPage() {
     }
 
     const handleImageChange = (e) => {
-        setImages([...e.target.files]);
+        const files = Array.from(e.target.files);
+        setError(""); // Clear previous errors
+        
+        // Check file sizes
+        const validFiles = [];
+        const oversizedFiles = [];
+        
+        files.forEach(file => {
+            if (file.size > MAX_FILE_SIZE) {
+                oversizedFiles.push(`${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+            } else {
+                validFiles.push(file);
+            }
+        });
+        
+        if (oversizedFiles.length > 0) {
+            setError(`Ove slike su prevelike (max 2MB):\n${oversizedFiles.join('\n')}`);
+        }
+        
+        setImages(validFiles);
+        
+        // Create preview URLs only for valid files
+        const previews = validFiles.map(file => URL.createObjectURL(file));
+        setImagePreviews(previews);
+    };
+
+    const removeImage = (index) => {
+        const newImages = images.filter((_, i) => i !== index);
+        const newPreviews = imagePreviews.filter((_, i) => i !== index);
+        setImages(newImages);
+        setImagePreviews(newPreviews);
     };
 
     const toggleCategory = (value) => {
@@ -78,7 +111,23 @@ export default function CreatePostPage() {
             await api.post("/api/posts", formData);
             navigate("/");
         } catch (err) {
-            setError("Greska pri kreiranju posta.");
+            console.error("Full error:", err);
+            console.error("Error response:", err.response?.data);
+            
+            // Show detailed validation errors
+            if (err.response?.status === 422) {
+                const errors = err.response.data?.errors || err.response.data;
+                if (typeof errors === 'object') {
+                    const errorMessages = Object.values(errors)
+                        .flat()
+                        .join('\n');
+                    setError(`Greška pri validaciji:\n${errorMessages}`);
+                } else {
+                    setError("Greška pri kreiranju posta - problem sa validacijom podataka.");
+                }
+            } else {
+                setError("Greška pri kreiranju posta.");
+            }
         }
     };
 
@@ -153,7 +202,24 @@ export default function CreatePostPage() {
                     </div>
                     <div className="form-field">
                         <span>Slike (opciono)</span>
+                        <small className="field-hint">Maksimalno 2MB po slici, dozvoljeni formati: JPG, PNG, GIF, SVG</small>
                         <input type="file" multiple accept="image/*" onChange={handleImageChange} />
+                        {imagePreviews.length > 0 && (
+                            <div className="image-preview-container">
+                                {imagePreviews.map((preview, idx) => (
+                                    <div key={idx} className="image-preview-item">
+                                        <img src={preview} alt={`Preview ${idx}`} />
+                                        <button
+                                            type="button"
+                                            className="remove-image-btn"
+                                            onClick={() => removeImage(idx)}
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                     <div className="form-field">
                         <span>Dodatne informacije (opciono)</span>
